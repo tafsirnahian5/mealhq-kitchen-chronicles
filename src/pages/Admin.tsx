@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { User, Bowl, Egg, Package } from 'lucide-react';
+import { User, Utensils, Egg, Package } from 'lucide-react';
 
 const Admin = () => {
   const [selectedTab, setSelectedTab] = useState("users");
@@ -167,7 +167,7 @@ const Admin = () => {
                             className="flex items-center gap-1"
                             onClick={() => addExtraItem(user.id, "Rice")}
                           >
-                            <Bowl size={14} />
+                            <Utensils size={14} />
                             <span>Add Rice</span>
                           </Button>
                         </TableCell>
