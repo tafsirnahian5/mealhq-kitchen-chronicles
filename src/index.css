@@ -81,10 +81,22 @@
   }
 
   .dashboard-box {
-    @apply bg-gradient-to-br from-card to-card/70 rounded-xl p-6 shadow-md hover:shadow-lg transition-all duration-300 border border-border;
+    @apply bg-gradient-to-br from-card to-card/70 rounded-xl p-4 md:p-6 shadow-md hover:shadow-lg transition-all duration-300 border border-border;
   }
 
   .logo-text {
-    @apply font-bold text-2xl bg-gradient-to-r from-mealhq-red to-mealhq-beige bg-clip-text text-transparent;
+    @apply font-bold bg-gradient-to-r from-mealhq-red to-mealhq-beige bg-clip-text text-transparent;
   }
 }
+
+/* Mobile-first design adjustments */
+html, body {
+  @apply overflow-x-hidden;
+}
+
+@media (max-width: 640px) {
+  .dashboard-box {
+    @apply p-3;
+  }
+}
+
