@@ -11,6 +11,7 @@ const Index = () => {
   // Dummy data for the demo
   const dashboardData = {
     totalMeals: 142,
+    totalLunch: 44,
     totalDinner: 98,
     totalExtraIncome: "$356",
     estimatedMealRate: "$5.25",
@@ -43,6 +44,13 @@ const Index = () => {
             value={dashboardData.totalMeals}
             icon={<Grid2X2 size={24} />}
             className="border-l-4 border-l-mealhq-red"
+          />
+          
+          <DashboardBox
+            title="Total Lunch"
+            value={dashboardData.totalLunch}
+            icon={<Grid2X2 size={24} />}
+            className="border-l-4 border-l-mealhq-beige"
           />
           
           <DashboardBox

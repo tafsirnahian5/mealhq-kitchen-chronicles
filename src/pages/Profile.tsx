@@ -7,17 +7,22 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const Profile = () => {
-  const [mealCount, setMealCount] = useState('1');
+  const [lunchCount, setLunchCount] = useState('0');
+  const [dinnerCount, setDinnerCount] = useState('1');
   const [mealSubmitted, setMealSubmitted] = useState(false);
   const [defaultMealEnabled, setDefaultMealEnabled] = useState(false);
-  const [defaultMealCount, setDefaultMealCount] = useState('1');
+  const [defaultLunchCount, setDefaultLunchCount] = useState('0');
+  const [defaultDinnerCount, setDefaultDinnerCount] = useState('1');
+  const [activeTab, setActiveTab] = useState('today');
 
   // Mock user data
   const userData = {
     name: "John Doe",
     totalMeals: 28,
+    totalLunch: 6,
     totalDinner: 22,
     joinedDate: "April 15, 2025"
   };
@@ -25,12 +30,12 @@ const Profile = () => {
   const handleMealSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    toast.success(`${mealCount} meal(s) submitted for today!`);
+    toast.success(`${lunchCount} lunch and ${dinnerCount} dinner submitted for today!`);
     setMealSubmitted(true);
   };
 
   const handleDefaultMealSave = () => {
-    toast.success(`Default meal count set to ${defaultMealCount}`);
+    toast.success(`Default meal count set to ${defaultLunchCount} lunch and ${defaultDinnerCount} dinner`);
   };
 
   return (
@@ -68,14 +73,18 @@ const Profile = () => {
                 
                 <div className="pt-4 border-t border-border">
                   <h3 className="font-medium mb-2">My Statistics</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-muted/50 rounded-lg p-4 text-center">
-                      <p className="text-sm text-muted-foreground">Total Meals</p>
-                      <p className="text-xl font-bold">{userData.totalMeals}</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="bg-muted/50 rounded-lg p-3 text-center">
+                      <p className="text-xs text-muted-foreground">Total Meals</p>
+                      <p className="text-lg font-bold">{userData.totalMeals}</p>
                     </div>
-                    <div className="bg-muted/50 rounded-lg p-4 text-center">
-                      <p className="text-sm text-muted-foreground">Total Dinner</p>
-                      <p className="text-xl font-bold">{userData.totalDinner}</p>
+                    <div className="bg-muted/50 rounded-lg p-3 text-center">
+                      <p className="text-xs text-muted-foreground">Lunch</p>
+                      <p className="text-lg font-bold">{userData.totalLunch}</p>
+                    </div>
+                    <div className="bg-muted/50 rounded-lg p-3 text-center">
+                      <p className="text-xs text-muted-foreground">Dinner</p>
+                      <p className="text-lg font-bold">{userData.totalDinner}</p>
                     </div>
                   </div>
                 </div>
@@ -91,76 +100,113 @@ const Profile = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {!mealSubmitted ? (
-                <form onSubmit={handleMealSubmit}>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="mealCount">How many meals do you want today?</Label>
-                      <Input
-                        id="mealCount"
-                        type="number"
-                        min="0"
-                        max="5"
-                        value={mealCount}
-                        onChange={(e) => setMealCount(e.target.value)}
-                        className="max-w-xs"
+              <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <TabsList className="mb-4">
+                  <TabsTrigger value="today">Today's Meals</TabsTrigger>
+                  <TabsTrigger value="defaults">Default Settings</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="today">
+                  {!mealSubmitted ? (
+                    <form onSubmit={handleMealSubmit}>
+                      <div className="space-y-6">
+                        <div className="space-y-4">
+                          <div>
+                            <Label htmlFor="lunchCount">How many lunch meals do you want today?</Label>
+                            <Input
+                              id="lunchCount"
+                              type="number"
+                              min="0"
+                              max="5"
+                              value={lunchCount}
+                              onChange={(e) => setLunchCount(e.target.value)}
+                              className="max-w-xs mt-2"
+                            />
+                          </div>
+                          
+                          <div>
+                            <Label htmlFor="dinnerCount">How many dinner meals do you want today?</Label>
+                            <Input
+                              id="dinnerCount"
+                              type="number"
+                              min="0"
+                              max="5"
+                              value={dinnerCount}
+                              onChange={(e) => setDinnerCount(e.target.value)}
+                              className="max-w-xs mt-2"
+                            />
+                          </div>
+                        </div>
+                        
+                        <Button type="submit" className="bg-mealhq-red hover:bg-mealhq-red-light">
+                          Submit Meal Count
+                        </Button>
+                      </div>
+                    </form>
+                  ) : (
+                    <div className="bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-200 p-4 rounded-lg">
+                      <p className="font-medium">Your meal count for today has been submitted!</p>
+                      <p className="text-sm mt-1">You submitted {lunchCount} lunch and {dinnerCount} dinner for today.</p>
+                    </div>
+                  )}
+                </TabsContent>
+                
+                <TabsContent value="defaults">
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">Enable Default Meal</p>
+                        <p className="text-sm text-muted-foreground">
+                          This will be used if you forget to update
+                        </p>
+                      </div>
+                      <Switch 
+                        checked={defaultMealEnabled}
+                        onCheckedChange={setDefaultMealEnabled}
                       />
                     </div>
                     
-                    <Button type="submit" className="bg-mealhq-red hover:bg-mealhq-red-light">
-                      Submit Meal Count
-                    </Button>
-                  </div>
-                </form>
-              ) : (
-                <div className="bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-200 p-4 rounded-lg">
-                  <p className="font-medium">Your meal count for today has been submitted!</p>
-                  <p className="text-sm mt-1">You submitted {mealCount} meal(s) for today.</p>
-                </div>
-              )}
-              
-              <div className="mt-8 pt-6 border-t border-border">
-                <h3 className="font-medium mb-4">Default Meal Settings</h3>
-                
-                <div className="space-y-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">Enable Default Meal</p>
-                      <p className="text-sm text-muted-foreground">
-                        This will be used if you forget to update
-                      </p>
-                    </div>
-                    <Switch 
-                      checked={defaultMealEnabled}
-                      onCheckedChange={setDefaultMealEnabled}
-                    />
-                  </div>
-                  
-                  {defaultMealEnabled && (
-                    <div className="space-y-4 animate-in fade-in-50 slide-in-from-top-5 duration-300">
-                      <div className="space-y-2">
-                        <Label htmlFor="defaultMealCount">Default Meal Count</Label>
-                        <Input
-                          id="defaultMealCount"
-                          type="number"
-                          min="0"
-                          max="5"
-                          value={defaultMealCount}
-                          onChange={(e) => setDefaultMealCount(e.target.value)}
-                          className="max-w-xs"
-                        />
+                    {defaultMealEnabled && (
+                      <div className="space-y-4 animate-in fade-in-50 slide-in-from-top-5 duration-300">
+                        <div className="space-y-4">
+                          <div>
+                            <Label htmlFor="defaultLunchCount">Default Lunch Count</Label>
+                            <Input
+                              id="defaultLunchCount"
+                              type="number"
+                              min="0"
+                              max="5"
+                              value={defaultLunchCount}
+                              onChange={(e) => setDefaultLunchCount(e.target.value)}
+                              className="max-w-xs mt-2"
+                            />
+                          </div>
+                          
+                          <div>
+                            <Label htmlFor="defaultDinnerCount">Default Dinner Count</Label>
+                            <Input
+                              id="defaultDinnerCount"
+                              type="number"
+                              min="0"
+                              max="5"
+                              value={defaultDinnerCount}
+                              onChange={(e) => setDefaultDinnerCount(e.target.value)}
+                              className="max-w-xs mt-2"
+                            />
+                          </div>
+                        </div>
+                        
+                        <Button 
+                          onClick={handleDefaultMealSave}
+                          variant="outline"
+                        >
+                          Save Default
+                        </Button>
                       </div>
-                      
-                      <Button 
-                        onClick={handleDefaultMealSave}
-                        variant="outline"
-                      >
-                        Save Default
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </div>
+                    )}
+                  </div>
+                </TabsContent>
+              </Tabs>
             </CardContent>
           </Card>
         </div>

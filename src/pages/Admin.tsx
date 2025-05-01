@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import Header from '@/components/Header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,11 +14,11 @@ const Admin = () => {
 
   // Mock user data
   const users = [
-    { id: 1, name: "John Doe", mealCount: 1, hasUpdated: true },
-    { id: 2, name: "Jane Smith", mealCount: 2, hasUpdated: true },
-    { id: 3, name: "Robert Johnson", mealCount: 0, hasUpdated: false },
-    { id: 4, name: "Emily Wilson", mealCount: 1, hasUpdated: true },
-    { id: 5, name: "Michael Brown", mealCount: 0, hasUpdated: false }
+    { id: 1, name: "John Doe", lunchCount: 0, dinnerCount: 1, hasUpdated: true },
+    { id: 2, name: "Jane Smith", lunchCount: 1, dinnerCount: 1, hasUpdated: true },
+    { id: 3, name: "Robert Johnson", lunchCount: 0, dinnerCount: 0, hasUpdated: false },
+    { id: 4, name: "Emily Wilson", lunchCount: 1, dinnerCount: 0, hasUpdated: true },
+    { id: 5, name: "Michael Brown", lunchCount: 0, dinnerCount: 0, hasUpdated: false }
   ];
   
   // Mock inventory data
@@ -33,8 +34,8 @@ const Admin = () => {
     toast.success(`Notification sent to user ${userId}`);
   };
   
-  const updateMealCount = (userId: number, count: number) => {
-    toast.success(`Updated meal count for user ${userId} to ${count}`);
+  const updateMealCount = (userId: number, type: 'lunch' | 'dinner', count: number) => {
+    toast.success(`Updated ${type} count for user ${userId} to ${count}`);
   };
 
   const addExtraItem = (userId: number, item: string) => {
@@ -85,7 +86,8 @@ const Admin = () => {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Name</TableHead>
-                      <TableHead>Today's Meals</TableHead>
+                      <TableHead>Lunch</TableHead>
+                      <TableHead>Dinner</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
@@ -100,13 +102,26 @@ const Admin = () => {
                               type="number"
                               className="w-16 h-8" 
                               min={0}
-                              defaultValue={user.mealCount} 
+                              defaultValue={user.lunchCount} 
                               onChange={(e) => {
                                 const newValue = parseInt(e.target.value) || 0;
-                                updateMealCount(user.id, newValue);
+                                updateMealCount(user.id, 'lunch', newValue);
                               }}
                             />
-                            <span>meals</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            <Input 
+                              type="number"
+                              className="w-16 h-8" 
+                              min={0}
+                              defaultValue={user.dinnerCount} 
+                              onChange={(e) => {
+                                const newValue = parseInt(e.target.value) || 0;
+                                updateMealCount(user.id, 'dinner', newValue);
+                              }}
+                            />
                           </div>
                         </TableCell>
                         <TableCell>
