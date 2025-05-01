@@ -28,12 +28,12 @@ const Login = () => {
     // For demo purposes, we'll just show a success message and redirect
     toast.success(`Successfully logged in as ${loginMode}!`);
     
-    // Simulate login
+    // Simulate login and redirect to appropriate page
     setTimeout(() => {
       if (loginMode === 'admin') {
-        navigate('/admin');
+        navigate('/home', { state: { isAdmin: true, isLoggedIn: true } });
       } else {
-        navigate('/profile');
+        navigate('/home', { state: { isAdmin: false, isLoggedIn: true } });
       }
     }, 1000);
   };

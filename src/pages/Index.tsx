@@ -1,12 +1,17 @@
 
 import React, { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import Header from '@/components/Header';
 import DashboardBox from '@/components/DashboardBox';
 import { Card } from '@/components/ui/card';
-import { Grid2X2, Egg, Utensils, Calculator, Package } from 'lucide-react';
+import { Grid2X2, Utensils, Calculator, Package } from 'lucide-react';
 
 const Index = () => {
   const [showInventory, setShowInventory] = useState(false);
+  const location = useLocation();
+  
+  // Extract login state from location or default to not logged in
+  const { isAdmin = false, isLoggedIn = false } = location.state || {};
 
   // Dummy data for the demo
   const dashboardData = {
@@ -30,7 +35,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+      <Header isLoggedIn={isLoggedIn} isAdmin={isAdmin} />
       
       <main className="max-w-7xl mx-auto px-4 py-8">
         <div className="mb-8">
