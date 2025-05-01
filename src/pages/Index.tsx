@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import Header from '@/components/Header';
 import DashboardBox from '@/components/DashboardBox';
 import { Card } from '@/components/ui/card';
-import { Grid2X2, Egg, Rice, Calculator, Package } from 'lucide-react';
+import { Grid2X2, Egg, Bowl, Calculator, Package } from 'lucide-react';
 
 const Index = () => {
   const [showInventory, setShowInventory] = useState(false);
@@ -55,7 +55,7 @@ const Index = () => {
           <DashboardBox
             title="Extra Income"
             value={dashboardData.totalExtraIncome}
-            icon={<Rice size={24} />}
+            icon={<Bowl size={24} />}
             className="border-l-4 border-l-mealhq-red"
           />
           

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Header from '@/components/Header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { User, Rice, Egg, Package } from 'lucide-react';
+import { User, Bowl, Egg, Package } from 'lucide-react';
 
 const Admin = () => {
   const [selectedTab, setSelectedTab] = useState("users");
@@ -168,7 +167,7 @@ const Admin = () => {
                             className="flex items-center gap-1"
                             onClick={() => addExtraItem(user.id, "Rice")}
                           >
-                            <Rice size={14} />
+                            <Bowl size={14} />
                             <span>Add Rice</span>
                           </Button>
                         </TableCell>
