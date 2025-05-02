@@ -1,4 +1,6 @@
+
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -17,6 +19,7 @@ const Admin = () => {
   const [selectedTab, setSelectedTab] = useState("users");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<string | undefined>(undefined);
+  const navigate = useNavigate();
 
   // Mock user data
   const users = [
@@ -61,10 +64,20 @@ const Admin = () => {
     }
 
     // Here you would implement the actual admin transfer logic
-    // For now, we're just showing a success toast
+    // In a real app, this would update the database to change user roles
     toast.success(`Admin powers transferred to ${selectedUser}`);
     setIsDialogOpen(false);
-    setSelectedUser(undefined);
+    
+    // Set a timeout to simulate the transfer process and then log out
+    setTimeout(() => {
+      // Log out the current admin
+      toast.info("You have been logged out as admin");
+      
+      // In a real application, you'd clear any auth tokens or session data here
+      
+      // Redirect to home page as regular user
+      navigate('/home', { state: { isAdmin: false, isLoggedIn: true } });
+    }, 2000);
   };
 
   return (
@@ -328,7 +341,7 @@ const Admin = () => {
                         <DialogHeader>
                           <DialogTitle>Confirm Transfer</DialogTitle>
                           <DialogDescription>
-                            Are you sure you want to transfer admin rights to {selectedUser}? This action cannot be undone.
+                            Are you sure you want to transfer admin rights to {selectedUser}? This action cannot be undone and you will be logged out as admin.
                           </DialogDescription>
                         </DialogHeader>
                         <DialogFooter>

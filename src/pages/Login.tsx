@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Header from '@/components/Header';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,11 +11,24 @@ import { toast } from 'sonner';
 
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [loginMode, setLoginMode] = useState<'admin' | 'user'>('user');
   const [formData, setFormData] = useState({
     name: '',
     password: ''
   });
+
+  // Check if we have a new admin coming from a transfer
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const newAdmin = searchParams.get('newAdmin');
+    
+    if (newAdmin) {
+      setFormData(prev => ({ ...prev, name: newAdmin }));
+      setLoginMode('admin');
+      toast.info(`Welcome ${newAdmin}! You have been granted admin privileges. Please log in.`);
+    }
+  }, [location]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -52,7 +65,7 @@ const Login = () => {
           </CardHeader>
           
           <CardContent>
-            <Tabs defaultValue="user" className="w-full" onValueChange={(value) => setLoginMode(value as 'admin' | 'user')}>
+            <Tabs defaultValue={loginMode} value={loginMode} className="w-full" onValueChange={(value) => setLoginMode(value as 'admin' | 'user')}>
               <TabsList className="grid w-full grid-cols-2 mb-6">
                 <TabsTrigger value="user">User</TabsTrigger>
                 <TabsTrigger value="admin">Admin</TabsTrigger>
