@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Header from '@/components/Header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Egg, Minus, Plus, Rice, Utensils } from 'lucide-react';
+import { Bowl, Egg, Minus, Plus, Utensils } from 'lucide-react';
 
 const Profile = () => {
   const [lunchCount, setLunchCount] = useState('0');
@@ -186,7 +185,7 @@ const Profile = () => {
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <Card className="p-4 flex flex-col items-center text-center">
-                        <Rice className="h-8 w-8 mb-2 text-mealhq-red" />
+                        <Bowl className="h-8 w-8 mb-2 text-mealhq-red" />
                         <h4 className="font-medium mb-1">Extra Rice</h4>
                         <p className="text-sm text-muted-foreground mb-4">Add extra portions of rice</p>
                         
