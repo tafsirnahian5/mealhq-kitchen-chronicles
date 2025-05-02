@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Bowl, Egg, Minus, Plus, Utensils } from 'lucide-react';
+import { Egg, Minus, Plus, Utensils } from 'lucide-react';
 
 const Profile = () => {
   const [lunchCount, setLunchCount] = useState('0');
@@ -74,6 +74,7 @@ const Profile = () => {
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* User Information Card */}
           <Card className="md:col-span-1">
             <CardHeader>
               <CardTitle>User Information</CardTitle>
@@ -132,6 +133,7 @@ const Profile = () => {
                   <TabsTrigger value="defaults">Default Settings</TabsTrigger>
                 </TabsList>
                 
+                {/* Today's Meals Tab */}
                 <TabsContent value="today">
                   {!mealSubmitted ? (
                     <form onSubmit={handleMealSubmit}>
@@ -185,7 +187,7 @@ const Profile = () => {
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <Card className="p-4 flex flex-col items-center text-center">
-                        <Bowl className="h-8 w-8 mb-2 text-mealhq-red" />
+                        <Utensils className="h-8 w-8 mb-2 text-mealhq-red" />
                         <h4 className="font-medium mb-1">Extra Rice</h4>
                         <p className="text-sm text-muted-foreground mb-4">Add extra portions of rice</p>
                         
@@ -257,6 +259,7 @@ const Profile = () => {
                   </div>
                 </TabsContent>
                 
+                {/* Default Settings Tab */}
                 <TabsContent value="defaults">
                   <div className="space-y-6">
                     <div className="flex items-center justify-between">
