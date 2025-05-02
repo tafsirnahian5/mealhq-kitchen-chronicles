@@ -7,10 +7,16 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { User, Utensils, Egg, Package } from 'lucide-react';
+import { User, Utensils, Egg, Package, ShieldCheck } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { useForm } from 'react-hook-form';
 
 const Admin = () => {
   const [selectedTab, setSelectedTab] = useState("users");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<string | undefined>(undefined);
 
   // Mock user data
   const users = [
@@ -42,6 +48,25 @@ const Admin = () => {
     toast.success(`Added ${item} to user ${userId}'s account`);
   };
 
+  const form = useForm({
+    defaultValues: {
+      newAdmin: '',
+    }
+  });
+
+  const handleTransferAdmin = () => {
+    if (!selectedUser) {
+      toast.error("Please select a user to transfer admin powers to");
+      return;
+    }
+
+    // Here you would implement the actual admin transfer logic
+    // For now, we're just showing a success toast
+    toast.success(`Admin powers transferred to ${selectedUser}`);
+    setIsDialogOpen(false);
+    setSelectedUser(undefined);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Header isLoggedIn={true} isAdmin={true} />
@@ -58,7 +83,7 @@ const Admin = () => {
           onValueChange={setSelectedTab}
           className="space-y-6"
         >
-          <TabsList className="grid grid-cols-3 max-w-md">
+          <TabsList className="grid grid-cols-4 max-w-md">
             <TabsTrigger value="users" className="flex items-center gap-2">
               <User size={16} />
               <span>Users</span>
@@ -70,6 +95,10 @@ const Admin = () => {
             <TabsTrigger value="inventory" className="flex items-center gap-2">
               <Package size={16} />
               <span>Inventory</span>
+            </TabsTrigger>
+            <TabsTrigger value="transfer" className="flex items-center gap-2">
+              <ShieldCheck size={16} />
+              <span>Transfer</span>
             </TabsTrigger>
           </TabsList>
           
@@ -247,6 +276,72 @@ const Admin = () => {
                 
                 <div className="mt-6">
                   <Button>Generate Shopping List</Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="transfer">
+            <Card>
+              <CardHeader>
+                <CardTitle>Transfer Admin Rights</CardTitle>
+                <CardDescription>
+                  Transfer admin responsibilities to another user
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  <p className="text-muted-foreground">
+                    As the month ends, you can transfer admin responsibilities to another person who will manage meals for the next month.
+                  </p>
+                  
+                  <div className="flex flex-col space-y-4">
+                    <div className="grid w-full max-w-sm items-center gap-1.5">
+                      <Label htmlFor="new-admin">Select New Admin</Label>
+                      <Select 
+                        value={selectedUser} 
+                        onValueChange={setSelectedUser}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a new admin" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {users.map(user => (
+                            <SelectItem key={user.id} value={user.name}>
+                              {user.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button 
+                          className="w-full max-w-sm"
+                          disabled={!selectedUser}
+                        >
+                          Transfer Admin Rights
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Confirm Transfer</DialogTitle>
+                          <DialogDescription>
+                            Are you sure you want to transfer admin rights to {selectedUser}? This action cannot be undone.
+                          </DialogDescription>
+                        </DialogHeader>
+                        <DialogFooter>
+                          <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                            Cancel
+                          </Button>
+                          <Button onClick={handleTransferAdmin}>
+                            Confirm Transfer
+                          </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
                 </div>
               </CardContent>
             </Card>
