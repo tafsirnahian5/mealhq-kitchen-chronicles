@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Egg, Utensils } from 'lucide-react';
 
 const Profile = () => {
   const [lunchCount, setLunchCount] = useState('0');
@@ -17,6 +18,10 @@ const Profile = () => {
   const [defaultLunchCount, setDefaultLunchCount] = useState('0');
   const [defaultDinnerCount, setDefaultDinnerCount] = useState('1');
   const [activeTab, setActiveTab] = useState('today');
+  
+  // New states for extra items
+  const [extraRiceAdded, setExtraRiceAdded] = useState(false);
+  const [extraEggAdded, setExtraEggAdded] = useState(false);
 
   // Mock user data
   const userData = {
@@ -36,6 +41,18 @@ const Profile = () => {
 
   const handleDefaultMealSave = () => {
     toast.success(`Default meal count set to ${defaultLunchCount} lunch and ${defaultDinnerCount} dinner`);
+  };
+
+  const addExtraItem = (itemType: 'rice' | 'egg') => {
+    if (itemType === 'rice' && !extraRiceAdded) {
+      setExtraRiceAdded(true);
+      toast.success('Extra rice added for today!');
+    } else if (itemType === 'egg' && !extraEggAdded) {
+      setExtraEggAdded(true);
+      toast.success('Extra egg added for today!');
+    } else {
+      toast.error(`You've already added extra ${itemType} today!`);
+    }
   };
 
   return (
@@ -103,6 +120,7 @@ const Profile = () => {
               <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList className="mb-4">
                   <TabsTrigger value="today">Today's Meals</TabsTrigger>
+                  <TabsTrigger value="extras">Extra Items</TabsTrigger>
                   <TabsTrigger value="defaults">Default Settings</TabsTrigger>
                 </TabsList>
                 
@@ -149,6 +167,44 @@ const Profile = () => {
                       <p className="text-sm mt-1">You submitted {lunchCount} lunch and {dinnerCount} dinner for today.</p>
                     </div>
                   )}
+                </TabsContent>
+
+                {/* New Tab for Extra Items */}
+                <TabsContent value="extras">
+                  <div className="space-y-6">
+                    <h3 className="text-lg font-medium">Extra Items</h3>
+                    <p className="text-muted-foreground">You can add one extra rice and one extra egg per day.</p>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <Card className="p-4 flex flex-col items-center text-center">
+                        <Utensils className="h-8 w-8 mb-2 text-mealhq-red" />
+                        <h4 className="font-medium mb-1">Extra Rice</h4>
+                        <p className="text-sm text-muted-foreground mb-4">Add an extra portion of rice</p>
+                        <Button 
+                          onClick={() => addExtraItem('rice')} 
+                          disabled={extraRiceAdded}
+                          variant={extraRiceAdded ? "outline" : "default"}
+                          className={extraRiceAdded ? "bg-muted" : ""}
+                        >
+                          {extraRiceAdded ? 'Added' : 'Add Rice'}
+                        </Button>
+                      </Card>
+                      
+                      <Card className="p-4 flex flex-col items-center text-center">
+                        <Egg className="h-8 w-8 mb-2 text-mealhq-red" />
+                        <h4 className="font-medium mb-1">Extra Egg</h4>
+                        <p className="text-sm text-muted-foreground mb-4">Add an extra egg to your meal</p>
+                        <Button 
+                          onClick={() => addExtraItem('egg')} 
+                          disabled={extraEggAdded}
+                          variant={extraEggAdded ? "outline" : "default"}
+                          className={extraEggAdded ? "bg-muted" : ""}
+                        >
+                          {extraEggAdded ? 'Added' : 'Add Egg'}
+                        </Button>
+                      </Card>
+                    </div>
+                  </div>
                 </TabsContent>
                 
                 <TabsContent value="defaults">
