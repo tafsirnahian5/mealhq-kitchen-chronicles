@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Egg, Utensils } from 'lucide-react';
+import { Egg, Minus, Plus, Rice, Utensils } from 'lucide-react';
 
 const Profile = () => {
   const [lunchCount, setLunchCount] = useState('0');
@@ -19,9 +19,9 @@ const Profile = () => {
   const [defaultDinnerCount, setDefaultDinnerCount] = useState('1');
   const [activeTab, setActiveTab] = useState('today');
   
-  // New states for extra items
-  const [extraRiceAdded, setExtraRiceAdded] = useState(false);
-  const [extraEggAdded, setExtraEggAdded] = useState(false);
+  // Changed from boolean to number for multiple items
+  const [extraRiceCount, setExtraRiceCount] = useState(0);
+  const [extraEggCount, setExtraEggCount] = useState(0);
 
   // Mock user data
   const userData = {
@@ -43,15 +43,24 @@ const Profile = () => {
     toast.success(`Default meal count set to ${defaultLunchCount} lunch and ${defaultDinnerCount} dinner`);
   };
 
-  const addExtraItem = (itemType: 'rice' | 'egg') => {
-    if (itemType === 'rice' && !extraRiceAdded) {
-      setExtraRiceAdded(true);
-      toast.success('Extra rice added for today!');
-    } else if (itemType === 'egg' && !extraEggAdded) {
-      setExtraEggAdded(true);
-      toast.success('Extra egg added for today!');
-    } else {
-      toast.error(`You've already added extra ${itemType} today!`);
+  // Updated to handle adding and removing multiple items
+  const handleExtraItem = (itemType: 'rice' | 'egg', action: 'add' | 'remove') => {
+    if (itemType === 'rice') {
+      if (action === 'add') {
+        setExtraRiceCount(prev => prev + 1);
+        toast.success('Extra rice portion added!');
+      } else if (action === 'remove' && extraRiceCount > 0) {
+        setExtraRiceCount(prev => prev - 1);
+        toast.success('Extra rice portion removed.');
+      }
+    } else if (itemType === 'egg') {
+      if (action === 'add') {
+        setExtraEggCount(prev => prev + 1);
+        toast.success('Extra egg added!');
+      } else if (action === 'remove' && extraEggCount > 0) {
+        setExtraEggCount(prev => prev - 1);
+        toast.success('Extra egg removed.');
+      }
     }
   };
 
@@ -169,39 +178,81 @@ const Profile = () => {
                   )}
                 </TabsContent>
 
-                {/* New Tab for Extra Items */}
+                {/* Updated Tab for Extra Items with quantity controls */}
                 <TabsContent value="extras">
                   <div className="space-y-6">
                     <h3 className="text-lg font-medium">Extra Items</h3>
-                    <p className="text-muted-foreground">You can add one extra rice and one extra egg per day.</p>
+                    <p className="text-muted-foreground">Add extra rice portions or eggs to your meal</p>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <Card className="p-4 flex flex-col items-center text-center">
-                        <Utensils className="h-8 w-8 mb-2 text-mealhq-red" />
+                        <Rice className="h-8 w-8 mb-2 text-mealhq-red" />
                         <h4 className="font-medium mb-1">Extra Rice</h4>
-                        <p className="text-sm text-muted-foreground mb-4">Add an extra portion of rice</p>
-                        <Button 
-                          onClick={() => addExtraItem('rice')} 
-                          disabled={extraRiceAdded}
-                          variant={extraRiceAdded ? "outline" : "default"}
-                          className={extraRiceAdded ? "bg-muted" : ""}
-                        >
-                          {extraRiceAdded ? 'Added' : 'Add Rice'}
-                        </Button>
+                        <p className="text-sm text-muted-foreground mb-4">Add extra portions of rice</p>
+                        
+                        <div className="flex items-center gap-4">
+                          <Button 
+                            onClick={() => handleExtraItem('rice', 'remove')}
+                            variant="outline"
+                            size="icon"
+                            disabled={extraRiceCount === 0}
+                            className="rounded-full"
+                          >
+                            <Minus className="h-4 w-4" />
+                          </Button>
+                          
+                          <span className="text-xl font-bold w-10 text-center">{extraRiceCount}</span>
+                          
+                          <Button 
+                            onClick={() => handleExtraItem('rice', 'add')}
+                            variant="default"
+                            size="icon"
+                            className="rounded-full bg-mealhq-red hover:bg-mealhq-red-light"
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        
+                        {extraRiceCount > 0 && (
+                          <p className="text-sm text-green-600 dark:text-green-400 mt-3">
+                            {extraRiceCount} extra rice portion{extraRiceCount !== 1 ? 's' : ''} added
+                          </p>
+                        )}
                       </Card>
                       
                       <Card className="p-4 flex flex-col items-center text-center">
                         <Egg className="h-8 w-8 mb-2 text-mealhq-red" />
                         <h4 className="font-medium mb-1">Extra Egg</h4>
-                        <p className="text-sm text-muted-foreground mb-4">Add an extra egg to your meal</p>
-                        <Button 
-                          onClick={() => addExtraItem('egg')} 
-                          disabled={extraEggAdded}
-                          variant={extraEggAdded ? "outline" : "default"}
-                          className={extraEggAdded ? "bg-muted" : ""}
-                        >
-                          {extraEggAdded ? 'Added' : 'Add Egg'}
-                        </Button>
+                        <p className="text-sm text-muted-foreground mb-4">Add extra eggs to your meal</p>
+                        
+                        <div className="flex items-center gap-4">
+                          <Button 
+                            onClick={() => handleExtraItem('egg', 'remove')}
+                            variant="outline"
+                            size="icon"
+                            disabled={extraEggCount === 0}
+                            className="rounded-full"
+                          >
+                            <Minus className="h-4 w-4" />
+                          </Button>
+                          
+                          <span className="text-xl font-bold w-10 text-center">{extraEggCount}</span>
+                          
+                          <Button 
+                            onClick={() => handleExtraItem('egg', 'add')}
+                            variant="default"
+                            size="icon"
+                            className="rounded-full bg-mealhq-red hover:bg-mealhq-red-light"
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        
+                        {extraEggCount > 0 && (
+                          <p className="text-sm text-green-600 dark:text-green-400 mt-3">
+                            {extraEggCount} extra egg{extraEggCount !== 1 ? 's' : ''} added
+                          </p>
+                        )}
                       </Card>
                     </div>
                   </div>
