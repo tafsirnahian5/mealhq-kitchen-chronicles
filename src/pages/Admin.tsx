@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
@@ -9,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { 
-  User, Utensils, Egg, Package, ShieldCheck, DollarSign, Edit 
+  User, Utensils, Egg, Package, ShieldCheck, DollarSign, Edit, Minus, Plus 
 } from 'lucide-react';
 import { 
   Dialog, DialogContent, DialogDescription, DialogFooter, 
@@ -41,6 +40,10 @@ const Admin = () => {
   const [extraAmount, setExtraAmount] = useState('');
   const [extraDescription, setExtraDescription] = useState('');
   const navigate = useNavigate();
+
+  // Extra item counters
+  const [extraRiceCounts, setExtraRiceCounts] = useState<Record<number, number>>({});
+  const [extraEggCounts, setExtraEggCounts] = useState<Record<number, number>>({});
 
   // Mock user data
   const [users, setUsers] = useState([
@@ -75,8 +78,79 @@ const Admin = () => {
     toast.success(`Updated ${type} count for user ${userId} to ${count}`);
   };
 
-  const addExtraItem = (userId: number, item: string) => {
-    toast.success(`Added ${item} to user ${userId}'s account`);
+  // Handle adding extra rice or egg items
+  const handleExtraItemCount = (userId: number, itemType: 'rice' | 'egg', action: 'add' | 'remove') => {
+    if (itemType === 'rice') {
+      setExtraRiceCounts(prev => {
+        const currentCount = prev[userId] || 0;
+        const newCount = action === 'add' ? currentCount + 1 : Math.max(0, currentCount - 1);
+        return { ...prev, [userId]: newCount };
+      });
+      
+      if (action === 'add') {
+        toast.success(`Added extra rice for user ${userId}`);
+      } else {
+        toast.info(`Removed extra rice for user ${userId}`);
+      }
+    } else if (itemType === 'egg') {
+      setExtraEggCounts(prev => {
+        const currentCount = prev[userId] || 0;
+        const newCount = action === 'add' ? currentCount + 1 : Math.max(0, currentCount - 1);
+        return { ...prev, [userId]: newCount };
+      });
+      
+      if (action === 'add') {
+        toast.success(`Added extra egg for user ${userId}`);
+      } else {
+        toast.info(`Removed extra egg for user ${userId}`);
+      }
+    }
+  };
+
+  // Submit extra rice or egg items
+  const submitExtraItems = (userId: number) => {
+    const riceCount = extraRiceCounts[userId] || 0;
+    const eggCount = extraEggCounts[userId] || 0;
+    
+    if (riceCount === 0 && eggCount === 0) {
+      toast.error("No extra items to submit");
+      return;
+    }
+    
+    let message = '';
+    
+    if (riceCount > 0) {
+      // Add extra rice to the extras array
+      setExtras([...extras, {
+        id: extras.length + 1,
+        userId,
+        description: `${riceCount} Extra Rice`,
+        amount: riceCount * 5, // Assuming $5 per rice
+        date: new Date().toISOString().split('T')[0]
+      }]);
+      
+      message += `${riceCount} rice portion${riceCount !== 1 ? 's' : ''} `;
+    }
+    
+    if (eggCount > 0) {
+      // Add extra eggs to the extras array
+      setExtras([...extras, {
+        id: extras.length + 1,
+        userId,
+        description: `${eggCount} Extra Egg`,
+        amount: eggCount * 2, // Assuming $2 per egg
+        date: new Date().toISOString().split('T')[0]
+      }]);
+      
+      if (riceCount > 0) message += 'and ';
+      message += `${eggCount} egg${eggCount !== 1 ? 's' : ''} `;
+    }
+    
+    toast.success(`Added ${message}to user ${userId}`);
+    
+    // Reset counts for this user
+    setExtraRiceCounts(prev => ({...prev, [userId]: 0}));
+    setExtraEggCounts(prev => ({...prev, [userId]: 0}));
   };
 
   const handleTransferAdmin = () => {
@@ -292,43 +366,82 @@ const Admin = () => {
               <CardContent>
                 <div className="space-y-6">
                   <div>
-                    <h3 className="text-lg font-semibold mb-4">Add Standard Extra Items</h3>
+                    <h3 className="text-lg font-semibold mb-4">Add Extra Items</h3>
                     <Table>
                       <TableHeader>
                         <TableRow>
                           <TableHead>Name</TableHead>
-                          <TableHead>Add Rice</TableHead>
-                          <TableHead>Add Egg</TableHead>
+                          <TableHead>Rice</TableHead>
+                          <TableHead>Egg</TableHead>
+                          <TableHead>Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {users.map((user) => (
-                          <TableRow key={user.id}>
-                            <TableCell className="font-medium">{user.name}</TableCell>
-                            <TableCell>
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                className="flex items-center gap-1"
-                                onClick={() => addExtraItem(user.id, "Rice")}
-                              >
-                                <Utensils size={14} />
-                                <span>Add Rice</span>
-                              </Button>
-                            </TableCell>
-                            <TableCell>
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                className="flex items-center gap-1"
-                                onClick={() => addExtraItem(user.id, "Egg")}
-                              >
-                                <Egg size={14} />
-                                <span>Add Egg</span>
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))}
+                        {users.map((user) => {
+                          const riceCount = extraRiceCounts[user.id] || 0;
+                          const eggCount = extraEggCounts[user.id] || 0;
+                          
+                          return (
+                            <TableRow key={user.id}>
+                              <TableCell className="font-medium">{user.name}</TableCell>
+                              <TableCell>
+                                <div className="flex items-center space-x-2">
+                                  <Button 
+                                    variant="outline"
+                                    size="icon"
+                                    onClick={() => handleExtraItemCount(user.id, 'rice', 'remove')}
+                                    disabled={riceCount === 0}
+                                    className="h-8 w-8 rounded-full"
+                                  >
+                                    <Minus size={14} />
+                                  </Button>
+                                  <span className="w-8 text-center font-medium">{riceCount}</span>
+                                  <Button 
+                                    variant="outline"
+                                    size="icon"
+                                    onClick={() => handleExtraItemCount(user.id, 'rice', 'add')}
+                                    className="h-8 w-8 rounded-full"
+                                  >
+                                    <Plus size={14} />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center space-x-2">
+                                  <Button 
+                                    variant="outline"
+                                    size="icon"
+                                    onClick={() => handleExtraItemCount(user.id, 'egg', 'remove')}
+                                    disabled={eggCount === 0}
+                                    className="h-8 w-8 rounded-full"
+                                  >
+                                    <Minus size={14} />
+                                  </Button>
+                                  <span className="w-8 text-center font-medium">{eggCount}</span>
+                                  <Button 
+                                    variant="outline"
+                                    size="icon"
+                                    onClick={() => handleExtraItemCount(user.id, 'egg', 'add')}
+                                    className="h-8 w-8 rounded-full"
+                                  >
+                                    <Plus size={14} />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Button 
+                                  variant="default" 
+                                  size="sm"
+                                  className="bg-mealhq-red hover:bg-mealhq-red-light"
+                                  onClick={() => submitExtraItems(user.id)}
+                                  disabled={riceCount === 0 && eggCount === 0}
+                                >
+                                  Submit
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
                       </TableBody>
                     </Table>
                   </div>
