@@ -30,10 +30,10 @@ const MealTable = () => {
   
   // Generate mock meal data for each user for each day
   const generateMockMealData = () => {
-    const mealData = {};
+    const mealData: Record<number, Record<string, number>> = {};
     
     users.forEach(user => {
-      const userMeals = {};
+      const userMeals: Record<string, number> = {};
       daysInMonth.forEach(day => {
         // Randomly assign 0, 1, or 2 meals per day
         userMeals[format(day, 'yyyy-MM-dd')] = Math.floor(Math.random() * 3);
@@ -48,7 +48,7 @@ const MealTable = () => {
   
   // Calculate totals
   const calculateDailyTotals = () => {
-    const totals = {};
+    const totals: Record<string, number> = {};
     daysInMonth.forEach(day => {
       const dateStr = format(day, 'yyyy-MM-dd');
       totals[dateStr] = users.reduce((sum, user) => sum + (meals[user.id][dateStr] || 0), 0);
@@ -72,10 +72,10 @@ const MealTable = () => {
   const userTotals = calculateUserTotals();
   
   // Calculate monthly total
-  const monthlyTotal = Object.values(dailyTotals).reduce((sum: number, val: any) => sum + val, 0);
+  const monthlyTotal = Object.values(dailyTotals).reduce((sum: number, val: number) => sum + val, 0);
   
   // Calculate monthly data for charts
-  const monthlyData = {
+  const monthlyData: Record<string, { meals: number, satisfaction: number }> = {
     "2025-01": { meals: 165, satisfaction: 4.2 },
     "2025-02": { meals: 150, satisfaction: 4.3 },
     "2025-03": { meals: 172, satisfaction: 4.1 },
