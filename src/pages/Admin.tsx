@@ -8,27 +8,55 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { User, Utensils, Egg, Package, ShieldCheck } from 'lucide-react';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { 
+  User, Utensils, Egg, Package, ShieldCheck, DollarSign, Edit 
+} from 'lucide-react';
+import { 
+  Dialog, DialogContent, DialogDescription, DialogFooter, 
+  DialogHeader, DialogTitle, DialogTrigger 
+} from '@/components/ui/dialog';
+import { 
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue 
+} from '@/components/ui/select';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+
+interface UserExtra {
+  id: number;
+  userId: number;
+  description: string;
+  amount: number;
+  date: string;
+}
 
 const Admin = () => {
   const [selectedTab, setSelectedTab] = useState("users");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<string | undefined>(undefined);
+  const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState<number | null>(null);
+  const [isExtraDialogOpen, setIsExtraDialogOpen] = useState(false);
+  const [extraAmount, setExtraAmount] = useState('');
+  const [extraDescription, setExtraDescription] = useState('');
   const navigate = useNavigate();
 
   // Mock user data
-  const users = [
+  const [users, setUsers] = useState([
     { id: 1, name: "John Doe", lunchCount: 0, dinnerCount: 1, hasUpdated: true },
     { id: 2, name: "Jane Smith", lunchCount: 1, dinnerCount: 1, hasUpdated: true },
     { id: 3, name: "Robert Johnson", lunchCount: 0, dinnerCount: 0, hasUpdated: false },
     { id: 4, name: "Emily Wilson", lunchCount: 1, dinnerCount: 0, hasUpdated: true },
     { id: 5, name: "Michael Brown", lunchCount: 0, dinnerCount: 0, hasUpdated: false }
-  ];
+  ]);
+  
+  // Mock extra expenses data
+  const [extras, setExtras] = useState<UserExtra[]>([
+    { id: 1, userId: 1, description: "Extra Rice", amount: 5, date: "2025-05-01" },
+    { id: 2, userId: 2, description: "Special Diet", amount: 15, date: "2025-05-02" },
+    { id: 3, userId: 3, description: "Additional Protein", amount: 10, date: "2025-05-01" }
+  ]);
   
   // Mock inventory data
   const inventory = [
@@ -51,12 +79,6 @@ const Admin = () => {
     toast.success(`Added ${item} to user ${userId}'s account`);
   };
 
-  const form = useForm({
-    defaultValues: {
-      newAdmin: '',
-    }
-  });
-
   const handleTransferAdmin = () => {
     if (!selectedUser) {
       toast.error("Please select a user to transfer admin powers to");
@@ -78,6 +100,53 @@ const Admin = () => {
       // Redirect to home page as regular user
       navigate('/home', { state: { isAdmin: false, isLoggedIn: true } });
     }, 2000);
+  };
+
+  const handleUpdateUser = (userId: number) => {
+    setCurrentUser(userId);
+    setIsUpdateDialogOpen(true);
+  };
+
+  const handleUpdateSubmit = () => {
+    if (currentUser === null) return;
+    
+    toast.success(`User ${currentUser} information updated successfully`);
+    setIsUpdateDialogOpen(false);
+    setCurrentUser(null);
+  };
+
+  const handleExtraSpend = (userId: number) => {
+    setCurrentUser(userId);
+    setIsExtraDialogOpen(true);
+  };
+
+  const handleExtraSubmit = () => {
+    if (currentUser === null || !extraAmount || !extraDescription) return;
+    
+    const amount = parseFloat(extraAmount);
+    
+    if (isNaN(amount) || amount <= 0) {
+      toast.error("Please enter a valid amount");
+      return;
+    }
+    
+    // Add new extra expense
+    const newExtra: UserExtra = {
+      id: extras.length + 1,
+      userId: currentUser,
+      description: extraDescription,
+      amount,
+      date: new Date().toISOString().split('T')[0]
+    };
+    
+    setExtras([...extras, newExtra]);
+    toast.success(`Extra expense of $${amount} added to user ${currentUser}`);
+    
+    // Reset form
+    setExtraAmount('');
+    setExtraDescription('');
+    setIsExtraDialogOpen(false);
+    setCurrentUser(null);
   };
 
   return (
@@ -131,7 +200,7 @@ const Admin = () => {
                       <TableHead>Lunch</TableHead>
                       <TableHead>Dinner</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -177,7 +246,7 @@ const Admin = () => {
                             </span>
                           )}
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="space-x-2">
                           {!user.hasUpdated && (
                             <Button 
                               variant="outline" 
@@ -187,6 +256,22 @@ const Admin = () => {
                               Notify
                             </Button>
                           )}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleUpdateUser(user.id)}
+                          >
+                            <Edit size={14} className="mr-1" />
+                            Update
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleExtraSpend(user.id)}
+                          >
+                            <DollarSign size={14} className="mr-1" />
+                            Add Expense
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -199,50 +284,82 @@ const Admin = () => {
           <TabsContent value="extras">
             <Card>
               <CardHeader>
-                <CardTitle>Extra Items</CardTitle>
+                <CardTitle>Extra Items and Expenses</CardTitle>
                 <CardDescription>
-                  Add extra items like rice and eggs to users' accounts
+                  Manage additional items and expenses for users
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Add Rice</TableHead>
-                      <TableHead>Add Egg</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {users.map((user) => (
-                      <TableRow key={user.id}>
-                        <TableCell className="font-medium">{user.name}</TableCell>
-                        <TableCell>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            className="flex items-center gap-1"
-                            onClick={() => addExtraItem(user.id, "Rice")}
-                          >
-                            <Utensils size={14} />
-                            <span>Add Rice</span>
-                          </Button>
-                        </TableCell>
-                        <TableCell>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            className="flex items-center gap-1"
-                            onClick={() => addExtraItem(user.id, "Egg")}
-                          >
-                            <Egg size={14} />
-                            <span>Add Egg</span>
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-lg font-semibold mb-4">Add Standard Extra Items</h3>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Add Rice</TableHead>
+                          <TableHead>Add Egg</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {users.map((user) => (
+                          <TableRow key={user.id}>
+                            <TableCell className="font-medium">{user.name}</TableCell>
+                            <TableCell>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                className="flex items-center gap-1"
+                                onClick={() => addExtraItem(user.id, "Rice")}
+                              >
+                                <Utensils size={14} />
+                                <span>Add Rice</span>
+                              </Button>
+                            </TableCell>
+                            <TableCell>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                className="flex items-center gap-1"
+                                onClick={() => addExtraItem(user.id, "Egg")}
+                              >
+                                <Egg size={14} />
+                                <span>Add Egg</span>
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                  
+                  <div>
+                    <h3 className="text-lg font-semibold mb-4">User Extra Expenses</h3>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>User</TableHead>
+                          <TableHead>Description</TableHead>
+                          <TableHead>Amount</TableHead>
+                          <TableHead>Date</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {extras.map((extra) => {
+                          const user = users.find(u => u.id === extra.userId);
+                          return (
+                            <TableRow key={extra.id}>
+                              <TableCell>{user?.name || `User ${extra.userId}`}</TableCell>
+                              <TableCell>{extra.description}</TableCell>
+                              <TableCell>${extra.amount.toFixed(2)}</TableCell>
+                              <TableCell>{extra.date}</TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -360,6 +477,75 @@ const Admin = () => {
             </Card>
           </TabsContent>
         </Tabs>
+        
+        {/* Update User Dialog */}
+        <Dialog open={isUpdateDialogOpen} onOpenChange={setIsUpdateDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Update User Information</DialogTitle>
+              <DialogDescription>
+                Make changes to user's details and preferences
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="name" className="text-right">Name</Label>
+                <Input id="name" className="col-span-3" defaultValue={users.find(u => u.id === currentUser)?.name} />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="dietary" className="text-right">Dietary Restrictions</Label>
+                <Input id="dietary" className="col-span-3" placeholder="e.g., vegetarian, dairy-free" />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="preferences" className="text-right">Preferences</Label>
+                <Textarea id="preferences" className="col-span-3" placeholder="Food preferences or allergies" />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsUpdateDialogOpen(false)}>Cancel</Button>
+              <Button onClick={handleUpdateSubmit}>Save changes</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        
+        {/* Extra Expense Dialog */}
+        <Dialog open={isExtraDialogOpen} onOpenChange={setIsExtraDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add Extra Expense</DialogTitle>
+              <DialogDescription>
+                Add a custom expense for {users.find(u => u.id === currentUser)?.name || 'user'}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="amount" className="text-right">Amount ($)</Label>
+                <Input 
+                  id="amount" 
+                  type="number" 
+                  className="col-span-3" 
+                  placeholder="0.00"
+                  value={extraAmount}
+                  onChange={(e) => setExtraAmount(e.target.value)}
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="description" className="text-right">Description</Label>
+                <Textarea 
+                  id="description" 
+                  className="col-span-3" 
+                  placeholder="Describe the expense"
+                  value={extraDescription}
+                  onChange={(e) => setExtraDescription(e.target.value)}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsExtraDialogOpen(false)}>Cancel</Button>
+              <Button onClick={handleExtraSubmit}>Add Expense</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );

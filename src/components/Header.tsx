@@ -2,8 +2,16 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { Moon, Sun, Grid2X2, User, Menu } from "lucide-react";
+import { Moon, Sun, Grid2X2, User, Menu, LogOut } from "lucide-react";
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu';
+import { toast } from 'sonner';
 
 interface HeaderProps {
   isLoggedIn?: boolean;
@@ -23,6 +31,11 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn = false, isAdmin = false }) 
 
   const toggleMobileMenu = () => {
     setShowMobileMenu(!showMobileMenu);
+  };
+
+  const handleLogout = () => {
+    toast.success("Successfully logged out");
+    navigate('/', { replace: true });
   };
 
   return (
@@ -71,25 +84,28 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn = false, isAdmin = false }) 
                   </Button>
                 )}
                 
-                {isAdmin ? (
-                  <Button 
-                    variant="ghost" 
-                    className="flex items-center gap-2"
-                    onClick={() => navigate('/admin')}
-                  >
-                    <User size={18} />
-                    <span>Admin</span>
-                  </Button>
-                ) : (
-                  <Button 
-                    variant="ghost" 
-                    className="flex items-center gap-2"
-                    onClick={() => navigate('/profile')}
-                  >
-                    <User size={18} />
-                    <span>Profile</span>
-                  </Button>
-                )}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="flex items-center gap-2 px-2">
+                      <Avatar className="h-8 w-8">
+                        <AvatarFallback className="bg-mealhq-red text-white">
+                          {isAdmin ? "A" : "U"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span>{isAdmin ? 'Admin' : 'User'}</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuItem onClick={() => navigate(isAdmin ? '/admin' : '/profile')}>
+                      <User className="mr-2" size={16} />
+                      <span>{isAdmin ? 'Admin Dashboard' : 'Profile'}</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleLogout}>
+                      <LogOut className="mr-2" size={16} />
+                      <span>Logout</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </>
             )}
 
@@ -132,7 +148,19 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn = false, isAdmin = false }) 
               }}
             >
               <User size={18} />
-              <span>{isAdmin ? 'Admin' : 'Profile'}</span>
+              <span>{isAdmin ? 'Admin Dashboard' : 'Profile'}</span>
+            </Button>
+
+            <Button 
+              variant="ghost" 
+              className="flex items-center justify-start gap-2 w-full text-red-500"
+              onClick={() => {
+                handleLogout();
+                setShowMobileMenu(false);
+              }}
+            >
+              <LogOut size={18} />
+              <span>Logout</span>
             </Button>
           </div>
         </div>
