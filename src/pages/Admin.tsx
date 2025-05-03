@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { 
-  User, Utensils, Egg, Package, ShieldCheck, DollarSign, Edit, Minus, Plus 
+  User, Utensils, Egg, Package, ShieldCheck, DollarSign, Edit, Minus, Plus, ToggleRight 
 } from 'lucide-react';
 import { 
   Dialog, DialogContent, DialogDescription, DialogFooter, 
@@ -21,6 +21,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { useForm } from 'react-hook-form';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 
 interface UserExtra {
   id: number;
@@ -176,6 +177,18 @@ const Admin = () => {
     }, 2000);
   };
 
+  const toggleUserUpdateStatus = (userId: number, status: boolean) => {
+    setUsers(users.map(user => {
+      if (user.id === userId) {
+        return { ...user, hasUpdated: status };
+      }
+      return user;
+    }));
+    
+    const statusMessage = status ? 'updated' : 'not updated';
+    toast.success(`User ${userId} status set to ${statusMessage}`);
+  };
+
   const handleUpdateUser = (userId: number) => {
     setCurrentUser(userId);
     setIsUpdateDialogOpen(true);
@@ -310,15 +323,16 @@ const Admin = () => {
                           </div>
                         </TableCell>
                         <TableCell>
-                          {user.hasUpdated ? (
-                            <span className="inline-block px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800">
-                              Updated
+                          <div className="flex items-center justify-between">
+                            <span className={`mr-2 ${user.hasUpdated ? 'text-green-600' : 'text-red-600'}`}>
+                              {user.hasUpdated ? 'Updated' : 'Not Updated'}
                             </span>
-                          ) : (
-                            <span className="inline-block px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-800">
-                              Not Updated
-                            </span>
-                          )}
+                            <Switch 
+                              checked={user.hasUpdated} 
+                              onCheckedChange={(checked) => toggleUserUpdateStatus(user.id, checked)}
+                              className={`${user.hasUpdated ? 'bg-green-500' : 'bg-red-500'}`}
+                            />
+                          </div>
                         </TableCell>
                         <TableCell className="space-x-2">
                           {!user.hasUpdated && (
@@ -336,7 +350,7 @@ const Admin = () => {
                             onClick={() => handleUpdateUser(user.id)}
                           >
                             <Edit size={14} className="mr-1" />
-                            Update
+                            Edit
                           </Button>
                           <Button
                             variant="outline"
