@@ -24,12 +24,14 @@ const Profile = () => {
   const [extraEggCount, setExtraEggCount] = useState(0);
   const [extrasSubmitted, setExtrasSubmitted] = useState(false);
 
-  // Mock user data
+  // Mock user data with extra rice and egg counts added
   const userData = {
     name: "John Doe",
     totalMeals: 28,
     totalLunch: 6,
     totalDinner: 22,
+    totalExtraRice: 12, // Added extra rice count
+    totalExtraEggs: 8,  // Added extra eggs count
     joinedDate: "April 15, 2025"
   };
 
@@ -141,6 +143,18 @@ const Profile = () => {
                     <div className="bg-muted/50 rounded-lg p-3 text-center">
                       <p className="text-xs text-muted-foreground">Dinner</p>
                       <p className="text-lg font-bold">{userData.totalDinner}</p>
+                    </div>
+                    
+                    {/* Added Extra Rice count */}
+                    <div className="bg-muted/50 rounded-lg p-3 text-center">
+                      <p className="text-xs text-muted-foreground">Extra Rice</p>
+                      <p className="text-lg font-bold">{userData.totalExtraRice}</p>
+                    </div>
+                    
+                    {/* Added Extra Eggs count */}
+                    <div className="bg-muted/50 rounded-lg p-3 text-center">
+                      <p className="text-xs text-muted-foreground">Extra Eggs</p>
+                      <p className="text-lg font-bold">{userData.totalExtraEggs}</p>
                     </div>
                   </div>
                 </div>

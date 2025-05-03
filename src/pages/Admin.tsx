@@ -8,8 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { 
-  User, Utensils, Egg, Package, ShieldCheck, DollarSign, Edit, Minus, Plus, ToggleRight, ShieldX,
-  CheckSquare, Square, Check, X
+  User, Utensils, Egg, Package, ShieldCheck, DollarSign, Minus, Plus,
+  Check, X
 } from 'lucide-react';
 import { 
   Dialog, DialogContent, DialogDescription, DialogFooter, 
@@ -190,17 +190,9 @@ const Admin = () => {
     toast.success(`User ${userId} status set to ${statusMessage}`);
   };
 
-  const handleUpdateUser = (userId: number) => {
-    setCurrentUser(userId);
-    setIsUpdateDialogOpen(true);
-  };
-
-  const handleUpdateSubmit = () => {
-    if (currentUser === null) return;
-    
-    toast.success(`User ${currentUser} information updated successfully`);
-    setIsUpdateDialogOpen(false);
-    setCurrentUser(null);
+  const handleUpdateAll = () => {
+    // Logic to finalize all user updates
+    toast.success("All user updates have been finalized");
   };
 
   const handleExtraSpend = (userId: number) => {
@@ -363,14 +355,6 @@ const Admin = () => {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handleUpdateUser(user.id)}
-                          >
-                            <Edit size={14} className="mr-1" />
-                            Edit
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
                             onClick={() => handleExtraSpend(user.id)}
                           >
                             <DollarSign size={14} className="mr-1" />
@@ -381,6 +365,15 @@ const Admin = () => {
                     ))}
                   </TableBody>
                 </Table>
+                
+                <div className="mt-6">
+                  <Button 
+                    className="bg-mealhq-red hover:bg-mealhq-red-light"
+                    onClick={handleUpdateAll}
+                  >
+                    Update All
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
