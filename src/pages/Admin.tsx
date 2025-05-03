@@ -8,7 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { 
-  User, Utensils, Egg, Package, ShieldCheck, DollarSign, Edit, Minus, Plus, ToggleRight 
+  User, Utensils, Egg, Package, ShieldCheck, DollarSign, Edit, Minus, Plus, ToggleRight, ShieldX,
+  CheckSquare, Square, Check, X
 } from 'lucide-react';
 import { 
   Dialog, DialogContent, DialogDescription, DialogFooter, 
@@ -323,16 +324,13 @@ const Admin = () => {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center justify-between">
-                            <span className={`mr-2 ${user.hasUpdated ? 'text-green-600' : 'text-red-600'}`}>
-                              {user.hasUpdated ? 'Updated' : 'Not Updated'}
-                            </span>
-                            <Switch 
-                              checked={user.hasUpdated} 
-                              onCheckedChange={(checked) => toggleUserUpdateStatus(user.id, checked)}
-                              className={`${user.hasUpdated ? 'bg-green-500' : 'bg-red-500'}`}
-                            />
-                          </div>
+                          <span className={`inline-block px-2 py-1 rounded-md text-xs font-medium ${
+                            user.hasUpdated 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {user.hasUpdated ? 'Updated' : 'Not Updated'}
+                          </span>
                         </TableCell>
                         <TableCell className="space-x-2">
                           {!user.hasUpdated && (
@@ -344,6 +342,24 @@ const Admin = () => {
                               Notify
                             </Button>
                           )}
+                          <Button
+                            variant={user.hasUpdated ? "outline" : "default"}
+                            size="sm"
+                            onClick={() => toggleUserUpdateStatus(user.id, !user.hasUpdated)}
+                            className={user.hasUpdated ? "" : "bg-green-500 hover:bg-green-600"}
+                          >
+                            {user.hasUpdated ? (
+                              <>
+                                <X size={14} className="mr-1" />
+                                Mark Not Updated
+                              </>
+                            ) : (
+                              <>
+                                <Check size={14} className="mr-1" />
+                                Mark Updated
+                              </>
+                            )}
+                          </Button>
                           <Button
                             variant="outline"
                             size="sm"
