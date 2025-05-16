@@ -4,11 +4,13 @@ import Header from '@/components/Header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Egg, Rice } from 'lucide-react';
 import { format, addDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth } from 'date-fns';
+import { MealWithExtras } from '@/components/admin/types';
 
 const MealTable = () => {
   const [currentMonth, setCurrentMonth] = useState(new Date(2025, 4, 1)); // May 2025
+  const [showExtras, setShowExtras] = useState(true);
   
   // Move to previous or next month
   const goToPrevMonth = () => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
@@ -44,7 +46,35 @@ const MealTable = () => {
     return mealData;
   };
   
+  // Generate mock extra items data
+  const generateMockExtraItemsData = () => {
+    const extraData: Record<number, Record<string, { rice: number, egg: number }>> = {};
+    
+    users.forEach(user => {
+      const userExtras: Record<string, { rice: number, egg: number }> = {};
+      daysInMonth.forEach(day => {
+        const dateStr = format(day, 'yyyy-MM-dd');
+        // Only add extras if there's a meal that day
+        if (meals[user.id][dateStr] > 0) {
+          // 30% chance for rice, 20% chance for egg
+          const hasRice = Math.random() < 0.3;
+          const hasEgg = Math.random() < 0.2;
+          userExtras[dateStr] = {
+            rice: hasRice ? Math.floor(Math.random() * 2) + 1 : 0,
+            egg: hasEgg ? Math.floor(Math.random() * 2) + 1 : 0
+          };
+        } else {
+          userExtras[dateStr] = { rice: 0, egg: 0 };
+        }
+      });
+      extraData[user.id] = userExtras;
+    });
+    
+    return extraData;
+  };
+  
   const meals = generateMockMealData();
+  const extraItems = generateMockExtraItemsData();
   
   // Calculate totals
   const calculateDailyTotals = () => {
@@ -68,8 +98,31 @@ const MealTable = () => {
     });
   };
   
+  const calculateExtraTotals = () => {
+    return users.map(user => {
+      let riceTotal = 0;
+      let eggTotal = 0;
+      
+      daysInMonth.forEach(day => {
+        const dateStr = format(day, 'yyyy-MM-dd');
+        if (extraItems[user.id] && extraItems[user.id][dateStr]) {
+          riceTotal += extraItems[user.id][dateStr].rice;
+          eggTotal += extraItems[user.id][dateStr].egg;
+        }
+      });
+      
+      return {
+        userId: user.id,
+        riceTotal,
+        eggTotal,
+        extraTotal: riceTotal + eggTotal
+      };
+    });
+  };
+  
   const dailyTotals = calculateDailyTotals();
   const userTotals = calculateUserTotals();
+  const extraTotals = calculateExtraTotals();
   
   // Calculate monthly total
   const monthlyTotal = Object.values(dailyTotals).reduce((sum: number, val: number) => sum + val, 0);
@@ -142,6 +195,16 @@ const MealTable = () => {
           </Card>
         </div>
         
+        <div className="mb-4 flex justify-between">
+          <Button 
+            variant="outline" 
+            onClick={() => setShowExtras(!showExtras)}
+            className="text-sm"
+          >
+            {showExtras ? "Hide Extra Items" : "Show Extra Items"}
+          </Button>
+        </div>
+        
         <Card>
           <CardHeader>
             <CardTitle>Monthly Meal Overview</CardTitle>
@@ -162,11 +225,26 @@ const MealTable = () => {
                       </TableHead>
                     ))}
                     <TableHead className="text-center font-medium">Total</TableHead>
+                    {showExtras && (
+                      <>
+                        <TableHead className="text-center font-medium">
+                          <div className="flex items-center justify-center">
+                            <Rice className="h-4 w-4 mr-1" />
+                          </div>
+                        </TableHead>
+                        <TableHead className="text-center font-medium">
+                          <div className="flex items-center justify-center">
+                            <Egg className="h-4 w-4 mr-1" />
+                          </div>
+                        </TableHead>
+                      </>
+                    )}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {users.map((user) => {
                     const userTotal = userTotals.find(ut => ut.userId === user.id)?.total || 0;
+                    const userExtraTotal = extraTotals.find(et => et.userId === user.id);
                     
                     return (
                       <TableRow key={user.id}>
@@ -174,18 +252,44 @@ const MealTable = () => {
                         {daysInMonth.map(day => {
                           const dateStr = format(day, 'yyyy-MM-dd');
                           const mealCount = meals[user.id][dateStr] || 0;
+                          const hasRice = extraItems[user.id]?.[dateStr]?.rice > 0;
+                          const hasEgg = extraItems[user.id]?.[dateStr]?.egg > 0;
                           
                           return (
-                            <TableCell key={dateStr} className="text-center">
+                            <TableCell key={dateStr} className="text-center relative">
                               <span className={mealCount === 0 ? "text-muted-foreground" : ""}>
                                 {mealCount}
                               </span>
+                              {showExtras && mealCount > 0 && (
+                                <div className="flex justify-center gap-1 mt-1 text-xs">
+                                  {hasRice && (
+                                    <span className="bg-amber-100 text-amber-800 rounded-full px-1">
+                                      +{extraItems[user.id][dateStr].rice}R
+                                    </span>
+                                  )}
+                                  {hasEgg && (
+                                    <span className="bg-blue-100 text-blue-800 rounded-full px-1">
+                                      +{extraItems[user.id][dateStr].egg}E
+                                    </span>
+                                  )}
+                                </div>
+                              )}
                             </TableCell>
                           );
                         })}
                         <TableCell className="text-center font-medium bg-secondary/50">
                           {userTotal}
                         </TableCell>
+                        {showExtras && (
+                          <>
+                            <TableCell className="text-center font-medium bg-amber-50">
+                              {userExtraTotal?.riceTotal || 0}
+                            </TableCell>
+                            <TableCell className="text-center font-medium bg-blue-50">
+                              {userExtraTotal?.eggTotal || 0}
+                            </TableCell>
+                          </>
+                        )}
                       </TableRow>
                     );
                   })}
@@ -202,6 +306,16 @@ const MealTable = () => {
                     <TableCell className="text-center font-medium bg-mealhq-beige/50">
                       {monthlyTotal}
                     </TableCell>
+                    {showExtras && (
+                      <>
+                        <TableCell className="text-center font-medium bg-amber-100">
+                          {extraTotals.reduce((sum, et) => sum + et.riceTotal, 0)}
+                        </TableCell>
+                        <TableCell className="text-center font-medium bg-blue-100">
+                          {extraTotals.reduce((sum, et) => sum + et.eggTotal, 0)}
+                        </TableCell>
+                      </>
+                    )}
                   </TableRow>
                 </TableBody>
               </Table>

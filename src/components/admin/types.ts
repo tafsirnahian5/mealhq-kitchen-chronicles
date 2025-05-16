@@ -33,3 +33,21 @@ export interface ExpenseSummary {
   eggAmount: number;
   otherAmount: number;
 }
+
+export interface ExtraItemRecord {
+  userId: number;
+  userName: string;
+  riceCount: number;
+  eggCount: number;
+  date: string;
+}
+
+export interface MealWithExtras {
+  userId: number;
+  userName: string;
+  mealCount: number;
+  date: string;
+  hasExtra: boolean;
+  extraRice: number;
+  extraEgg: number;
+}

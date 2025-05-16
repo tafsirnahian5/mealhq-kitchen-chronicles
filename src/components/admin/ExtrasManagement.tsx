@@ -1,37 +1,13 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Minus, Plus, DollarSign, Receipt, FileText } from 'lucide-react';
+import { Minus, Plus, DollarSign, Receipt, FileText, Filter } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
-
-interface User {
-  id: number;
-  name: string;
-  lunchCount: number;
-  dinnerCount: number;
-  hasUpdated: boolean;
-}
-
-interface UserExtra {
-  id: number;
-  userId: number;
-  description: string;
-  amount: number;
-  date: string;
-}
-
-interface ExpenseSummary {
-  totalBudget: number;
-  totalSpent: number;
-  remaining: number;
-  riceCount: number;
-  eggCount: number;
-  riceAmount: number;
-  eggAmount: number;
-  otherAmount: number;
-}
+import { toast } from 'sonner';
+import { User, UserExtra, ExpenseSummary, ExtraItemRecord } from './types';
+import { format } from 'date-fns';
 
 interface ExtrasManagementProps {
   users: User[];
@@ -50,6 +26,10 @@ const ExtrasManagement: React.FC<ExtrasManagementProps> = ({
   handleExtraItemCount,
   submitExtraItems
 }) => {
+  const [showDailyExtras, setShowDailyExtras] = useState(false);
+  const [filterDate, setFilterDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
+  const [extraItemsByUser, setExtraItemsByUser] = useState<ExtraItemRecord[]>([]);
+
   // Calculate expense summaries
   const totalSpent = extras.reduce((sum, extra) => sum + extra.amount, 0);
   const totalBudget = 1000; // Example budget - this could be fetched from the database
@@ -68,6 +48,54 @@ const ExtrasManagement: React.FC<ExtrasManagementProps> = ({
 
   // Calculate percentage spent
   const percentageSpent = (totalSpent / totalBudget) * 100;
+
+  // Calculate today's expenses for each user
+  useEffect(() => {
+    // Group extras by user and date
+    const todayExtras = extras.filter(extra => extra.date === filterDate);
+    
+    const extrasByUser: Record<number, ExtraItemRecord> = {};
+    
+    // Initialize with all users
+    users.forEach(user => {
+      extrasByUser[user.id] = {
+        userId: user.id,
+        userName: user.name,
+        riceCount: 0,
+        eggCount: 0,
+        date: filterDate
+      };
+    });
+    
+    // Tally up rice and egg counts
+    todayExtras.forEach(extra => {
+      if (extra.description.includes('Rice')) {
+        const count = parseInt(extra.description.split(' ')[0]) || 1;
+        extrasByUser[extra.userId].riceCount += count;
+      } else if (extra.description.includes('Egg')) {
+        const count = parseInt(extra.description.split(' ')[0]) || 1;
+        extrasByUser[extra.userId].eggCount += count;
+      }
+    });
+    
+    setExtraItemsByUser(Object.values(extrasByUser));
+  }, [extras, users, filterDate]);
+
+  // Helper function to validate if a user has meals today
+  const validateMealCheck = (userId: number): boolean => {
+    // Mock implementation - would connect to database to check if user has a meal today
+    const user = users.find(u => u.id === userId);
+    return user ? (user.lunchCount > 0 || user.dinnerCount > 0) : false;
+  };
+
+  // Modified handleExtraItemCount with validation
+  const handleExtraItemWithValidation = (userId: number, itemType: 'rice' | 'egg', action: 'add' | 'remove') => {
+    if (action === 'add' && !validateMealCheck(userId)) {
+      toast.error("User must take a meal before adding extra items");
+      return;
+    }
+    handleExtraItemCount(userId, itemType, action);
+  };
 
   return (
     <div className="space-y-6">
@@ -166,16 +194,24 @@ const ExtrasManagement: React.FC<ExtrasManagementProps> = ({
             {users.map((user) => {
               const riceCount = extraRiceCounts[user.id] || 0;
               const eggCount = extraEggCounts[user.id] || 0;
+              const hasMealToday = validateMealCheck(user.id);
               
               return (
                 <TableRow key={user.id}>
-                  <TableCell className="font-medium">{user.name}</TableCell>
+                  <TableCell className="font-medium">
+                    {user.name}
+                    {!hasMealToday && (
+                      <div className="text-xs text-red-500 mt-1">
+                        No meal today
+                      </div>
+                    )}
+                  </TableCell>
                   <TableCell>
                     <div className="flex items-center space-x-2">
                       <Button 
                         variant="outline"
                         size="icon"
-                        onClick={() => handleExtraItemCount(user.id, 'rice', 'remove')}
+                        onClick={() => handleExtraItemWithValidation(user.id, 'rice', 'remove')}
                         disabled={riceCount === 0}
                         className="h-8 w-8 rounded-full"
                       >
@@ -185,7 +221,8 @@ const ExtrasManagement: React.FC<ExtrasManagementProps> = ({
                       <Button 
                         variant="outline"
                         size="icon"
-                        onClick={() => handleExtraItemCount(user.id, 'rice', 'add')}
+                        onClick={() => handleExtraItemWithValidation(user.id, 'rice', 'add')}
+                        disabled={!hasMealToday}
                         className="h-8 w-8 rounded-full"
                       >
                         <Plus size={14} />
@@ -197,7 +234,7 @@ const ExtrasManagement: React.FC<ExtrasManagementProps> = ({
                       <Button 
                         variant="outline"
                         size="icon"
-                        onClick={() => handleExtraItemCount(user.id, 'egg', 'remove')}
+                        onClick={() => handleExtraItemWithValidation(user.id, 'egg', 'remove')}
                         disabled={eggCount === 0}
                         className="h-8 w-8 rounded-full"
                       >
@@ -207,7 +244,8 @@ const ExtrasManagement: React.FC<ExtrasManagementProps> = ({
                       <Button 
                         variant="outline"
                         size="icon"
-                        onClick={() => handleExtraItemCount(user.id, 'egg', 'add')}
+                        onClick={() => handleExtraItemWithValidation(user.id, 'egg', 'add')}
+                        disabled={!hasMealToday}
                         className="h-8 w-8 rounded-full"
                       >
                         <Plus size={14} />
@@ -230,6 +268,48 @@ const ExtrasManagement: React.FC<ExtrasManagementProps> = ({
             })}
           </TableBody>
         </Table>
+      </div>
+      
+      {/* Daily Extras Summary */}
+      <div>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-semibold">Daily Extra Items Summary</h3>
+          <div className="flex items-center gap-2">
+            <input
+              type="date"
+              value={filterDate}
+              onChange={(e) => setFilterDate(e.target.value)}
+              className="px-2 py-1 border rounded"
+            />
+            <Button variant="outline" size="sm" onClick={() => setShowDailyExtras(!showDailyExtras)}>
+              <Filter className="h-4 w-4 mr-1" />
+              {showDailyExtras ? "Hide Summary" : "Show Summary"}
+            </Button>
+          </div>
+        </div>
+        
+        {showDailyExtras && (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>User</TableHead>
+                <TableHead>Extra Rice</TableHead>
+                <TableHead>Extra Egg</TableHead>
+                <TableHead>Date</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {extraItemsByUser.map((record) => (
+                <TableRow key={`${record.userId}-${record.date}`}>
+                  <TableCell className="font-medium">{record.userName}</TableCell>
+                  <TableCell>{record.riceCount}</TableCell>
+                  <TableCell>{record.eggCount}</TableCell>
+                  <TableCell>{record.date}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
       </div>
       
       {/* User Extra Expenses */}
