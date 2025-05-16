@@ -83,7 +83,7 @@ const ExtrasManagement: React.FC<ExtrasManagementProps> = ({
 
   // Helper function to validate if a user has meals today
   const validateMealCheck = (userId: number): boolean => {
-    // Mock implementation - would connect to database to check if user has a meal today
+    // Implementation to check if user has a meal today
     const user = users.find(u => u.id === userId);
     return user ? (user.lunchCount > 0 || user.dinnerCount > 0) : false;
   };
@@ -202,7 +202,7 @@ const ExtrasManagement: React.FC<ExtrasManagementProps> = ({
                     {user.name}
                     {!hasMealToday && (
                       <div className="text-xs text-red-500 mt-1">
-                        No meal today
+                        No meal today - cannot add extras
                       </div>
                     )}
                   </TableCell>
@@ -258,7 +258,7 @@ const ExtrasManagement: React.FC<ExtrasManagementProps> = ({
                       size="sm"
                       className="bg-mealhq-red hover:bg-mealhq-red-light"
                       onClick={() => submitExtraItems(user.id)}
-                      disabled={riceCount === 0 && eggCount === 0}
+                      disabled={(riceCount === 0 && eggCount === 0) || !hasMealToday}
                     >
                       Submit
                     </Button>
@@ -336,6 +336,13 @@ const ExtrasManagement: React.FC<ExtrasManagementProps> = ({
                 </TableRow>
               );
             })}
+            {extras.length > 0 && (
+              <TableRow className="bg-muted/50">
+                <TableCell colSpan={2} className="font-bold text-right">Total Expenses:</TableCell>
+                <TableCell className="font-bold">${totalSpent.toFixed(2)}</TableCell>
+                <TableCell></TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </div>

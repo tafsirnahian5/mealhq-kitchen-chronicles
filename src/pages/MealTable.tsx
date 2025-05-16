@@ -4,7 +4,7 @@ import Header from '@/components/Header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, Egg, Rice } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Egg, Utensils } from 'lucide-react';
 import { format, addDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth } from 'date-fns';
 import { MealWithExtras } from '@/components/admin/types';
 
@@ -229,12 +229,14 @@ const MealTable = () => {
                       <>
                         <TableHead className="text-center font-medium">
                           <div className="flex items-center justify-center">
-                            <Rice className="h-4 w-4 mr-1" />
+                            <Utensils className="h-4 w-4 mr-1" />
+                            <span>Rice</span>
                           </div>
                         </TableHead>
                         <TableHead className="text-center font-medium">
                           <div className="flex items-center justify-center">
                             <Egg className="h-4 w-4 mr-1" />
+                            <span>Egg</span>
                           </div>
                         </TableHead>
                       </>
