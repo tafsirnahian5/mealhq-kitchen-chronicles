@@ -2,7 +2,9 @@
 import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Minus, Plus } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Minus, Plus, DollarSign, Receipt, FileText } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
 
 interface User {
   id: number;
@@ -18,6 +20,17 @@ interface UserExtra {
   description: string;
   amount: number;
   date: string;
+}
+
+interface ExpenseSummary {
+  totalBudget: number;
+  totalSpent: number;
+  remaining: number;
+  riceCount: number;
+  eggCount: number;
+  riceAmount: number;
+  eggAmount: number;
+  otherAmount: number;
 }
 
 interface ExtrasManagementProps {
@@ -37,8 +50,107 @@ const ExtrasManagement: React.FC<ExtrasManagementProps> = ({
   handleExtraItemCount,
   submitExtraItems
 }) => {
+  // Calculate expense summaries
+  const totalSpent = extras.reduce((sum, extra) => sum + extra.amount, 0);
+  const totalBudget = 1000; // Example budget - this could be fetched from the database
+  const remaining = totalBudget - totalSpent;
+
+  // Calculate expenses by type
+  const riceExtras = extras.filter(e => e.description.includes('Rice'));
+  const eggExtras = extras.filter(e => e.description.includes('Egg'));
+  const otherExtras = extras.filter(e => !e.description.includes('Rice') && !e.description.includes('Egg'));
+  
+  const riceCount = riceExtras.length;
+  const eggCount = eggExtras.length;
+  const riceAmount = riceExtras.reduce((sum, e) => sum + e.amount, 0);
+  const eggAmount = eggExtras.reduce((sum, e) => sum + e.amount, 0);
+  const otherAmount = otherExtras.reduce((sum, e) => sum + e.amount, 0);
+
+  // Calculate percentage spent
+  const percentageSpent = (totalSpent / totalBudget) * 100;
+
   return (
     <div className="space-y-6">
+      {/* Budget Overview Section */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Total Budget</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${totalBudget.toFixed(2)}</div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Total Spent</CardTitle>
+            <Receipt className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${totalSpent.toFixed(2)}</div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Remaining</CardTitle>
+            <FileText className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${remaining.toFixed(2)}</div>
+          </CardContent>
+        </Card>
+      </div>
+      
+      <div>
+        <div className="space-y-2">
+          <h4 className="text-sm font-medium">Budget Usage</h4>
+          <Progress value={percentageSpent} className="h-2" />
+          <div className="flex justify-between text-xs text-muted-foreground">
+            <div>{percentageSpent.toFixed(1)}% used</div>
+            <div>{(100 - percentageSpent).toFixed(1)}% remaining</div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Expense Breakdown */}
+      <div>
+        <h3 className="text-lg font-semibold mb-4">Expense Breakdown</h3>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Category</TableHead>
+              <TableHead>Count</TableHead>
+              <TableHead>Amount</TableHead>
+              <TableHead>Percentage</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow>
+              <TableCell className="font-medium">Rice</TableCell>
+              <TableCell>{riceCount}</TableCell>
+              <TableCell>${riceAmount.toFixed(2)}</TableCell>
+              <TableCell>{totalSpent > 0 ? ((riceAmount / totalSpent) * 100).toFixed(1) : '0'}%</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="font-medium">Egg</TableCell>
+              <TableCell>{eggCount}</TableCell>
+              <TableCell>${eggAmount.toFixed(2)}</TableCell>
+              <TableCell>{totalSpent > 0 ? ((eggAmount / totalSpent) * 100).toFixed(1) : '0'}%</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="font-medium">Other Expenses</TableCell>
+              <TableCell>{otherExtras.length}</TableCell>
+              <TableCell>${otherAmount.toFixed(2)}</TableCell>
+              <TableCell>{totalSpent > 0 ? ((otherAmount / totalSpent) * 100).toFixed(1) : '0'}%</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </div>
+
+      {/* Add Extra Items Section */}
       <div>
         <h3 className="text-lg font-semibold mb-4">Add Extra Items</h3>
         <Table>
@@ -120,6 +232,7 @@ const ExtrasManagement: React.FC<ExtrasManagementProps> = ({
         </Table>
       </div>
       
+      {/* User Extra Expenses */}
       <div>
         <h3 className="text-lg font-semibold mb-4">User Extra Expenses</h3>
         <Table>

@@ -22,3 +22,14 @@ export interface InventoryItem {
   status: string;
   price: string;
 }
+
+export interface ExpenseSummary {
+  totalBudget: number;
+  totalSpent: number;
+  remaining: number;
+  riceCount: number;
+  eggCount: number;
+  riceAmount: number;
+  eggAmount: number;
+  otherAmount: number;
+}
