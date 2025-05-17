@@ -9,7 +9,118 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      contributions: {
+        Row: {
+          amount: number
+          date: string
+          description: string | null
+          id: number
+          userid: number
+        }
+        Insert: {
+          amount: number
+          date?: string
+          description?: string | null
+          id?: number
+          userid: number
+        }
+        Update: {
+          amount?: number
+          date?: string
+          description?: string | null
+          id?: number
+          userid?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contributions_userid_fkey"
+            columns: ["userid"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      extras: {
+        Row: {
+          amount: number
+          date: string
+          description: string
+          id: number
+          userid: number
+        }
+        Insert: {
+          amount: number
+          date?: string
+          description: string
+          id?: number
+          userid: number
+        }
+        Update: {
+          amount?: number
+          date?: string
+          description?: string
+          id?: number
+          userid?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "extras_userid_fkey"
+            columns: ["userid"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory: {
+        Row: {
+          id: number
+          item: string
+          price: string
+          quantity: string
+          status: string
+        }
+        Insert: {
+          id?: number
+          item: string
+          price: string
+          quantity: string
+          status: string
+        }
+        Update: {
+          id?: number
+          item?: string
+          price?: string
+          quantity?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      users: {
+        Row: {
+          dinnercount: number | null
+          hasupdated: boolean | null
+          id: number
+          lunchcount: number | null
+          name: string
+        }
+        Insert: {
+          dinnercount?: number | null
+          hasupdated?: boolean | null
+          id?: number
+          lunchcount?: number | null
+          name: string
+        }
+        Update: {
+          dinnercount?: number | null
+          hasupdated?: boolean | null
+          id?: number
+          lunchcount?: number | null
+          name?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

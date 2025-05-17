@@ -8,6 +8,7 @@ import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import { User, UserExtra, ExpenseSummary, ExtraItemRecord } from './types';
 import { format } from 'date-fns';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ExtrasManagementProps {
   users: User[];
@@ -80,22 +81,6 @@ const ExtrasManagement: React.FC<ExtrasManagementProps> = ({
     
     setExtraItemsByUser(Object.values(extrasByUser));
   }, [extras, users, filterDate]);
-
-  // Helper function to validate if a user has meals today
-  const validateMealCheck = (userId: number): boolean => {
-    // Implementation to check if user has a meal today
-    const user = users.find(u => u.id === userId);
-    return user ? (user.lunchCount > 0 || user.dinnerCount > 0) : false;
-  };
-
-  // Modified handleExtraItemCount with validation
-  const handleExtraItemWithValidation = (userId: number, itemType: 'rice' | 'egg', action: 'add' | 'remove') => {
-    if (action === 'add' && !validateMealCheck(userId)) {
-      toast.error("User must take a meal before adding extra items");
-      return;
-    }
-    handleExtraItemCount(userId, itemType, action);
-  };
 
   return (
     <div className="space-y-6">
@@ -194,24 +179,18 @@ const ExtrasManagement: React.FC<ExtrasManagementProps> = ({
             {users.map((user) => {
               const riceCount = extraRiceCounts[user.id] || 0;
               const eggCount = extraEggCounts[user.id] || 0;
-              const hasMealToday = validateMealCheck(user.id);
               
               return (
                 <TableRow key={user.id}>
                   <TableCell className="font-medium">
                     {user.name}
-                    {!hasMealToday && (
-                      <div className="text-xs text-red-500 mt-1">
-                        No meal today - cannot add extras
-                      </div>
-                    )}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center space-x-2">
                       <Button 
                         variant="outline"
                         size="icon"
-                        onClick={() => handleExtraItemWithValidation(user.id, 'rice', 'remove')}
+                        onClick={() => handleExtraItemCount(user.id, 'rice', 'remove')}
                         disabled={riceCount === 0}
                         className="h-8 w-8 rounded-full"
                       >
@@ -221,8 +200,7 @@ const ExtrasManagement: React.FC<ExtrasManagementProps> = ({
                       <Button 
                         variant="outline"
                         size="icon"
-                        onClick={() => handleExtraItemWithValidation(user.id, 'rice', 'add')}
-                        disabled={!hasMealToday}
+                        onClick={() => handleExtraItemCount(user.id, 'rice', 'add')}
                         className="h-8 w-8 rounded-full"
                       >
                         <Plus size={14} />
@@ -234,7 +212,7 @@ const ExtrasManagement: React.FC<ExtrasManagementProps> = ({
                       <Button 
                         variant="outline"
                         size="icon"
-                        onClick={() => handleExtraItemWithValidation(user.id, 'egg', 'remove')}
+                        onClick={() => handleExtraItemCount(user.id, 'egg', 'remove')}
                         disabled={eggCount === 0}
                         className="h-8 w-8 rounded-full"
                       >
@@ -244,8 +222,7 @@ const ExtrasManagement: React.FC<ExtrasManagementProps> = ({
                       <Button 
                         variant="outline"
                         size="icon"
-                        onClick={() => handleExtraItemWithValidation(user.id, 'egg', 'add')}
-                        disabled={!hasMealToday}
+                        onClick={() => handleExtraItemCount(user.id, 'egg', 'add')}
                         className="h-8 w-8 rounded-full"
                       >
                         <Plus size={14} />
@@ -258,7 +235,7 @@ const ExtrasManagement: React.FC<ExtrasManagementProps> = ({
                       size="sm"
                       className="bg-mealhq-red hover:bg-mealhq-red-light"
                       onClick={() => submitExtraItems(user.id)}
-                      disabled={(riceCount === 0 && eggCount === 0) || !hasMealToday}
+                      disabled={riceCount === 0 && eggCount === 0}
                     >
                       Submit
                     </Button>

@@ -1,17 +1,19 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { User, Egg, Package, ShieldCheck } from 'lucide-react';
+import { User, Egg, Package, ShieldCheck, BadgeDollarSign } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
-// Import our new components
+// Import our components
 import UserManagement from '@/components/admin/UserManagement';
 import ExtrasManagement from '@/components/admin/ExtrasManagement';
 import InventoryManagement from '@/components/admin/InventoryManagement';
 import AdminTransfer from '@/components/admin/AdminTransfer';
+import BudgetingManagement from '@/components/admin/BudgetingManagement';
 import UpdateUserDialog from '@/components/admin/UpdateUserDialog';
 import ExtraExpenseDialog from '@/components/admin/ExtraExpenseDialog';
 import { User as UserType, UserExtra, InventoryItem } from '@/components/admin/types';
@@ -26,42 +28,96 @@ const Admin = () => {
   const [extraAmount, setExtraAmount] = useState('');
   const [extraDescription, setExtraDescription] = useState('');
   const navigate = useNavigate();
-
+  
   // Extra item counters
   const [extraRiceCounts, setExtraRiceCounts] = useState<Record<number, number>>({});
   const [extraEggCounts, setExtraEggCounts] = useState<Record<number, number>>({});
 
-  // Mock user data
-  const [users, setUsers] = useState<UserType[]>([
-    { id: 1, name: "John Doe", lunchCount: 0, dinnerCount: 1, hasUpdated: true },
-    { id: 2, name: "Jane Smith", lunchCount: 1, dinnerCount: 1, hasUpdated: true },
-    { id: 3, name: "Robert Johnson", lunchCount: 0, dinnerCount: 0, hasUpdated: false },
-    { id: 4, name: "Emily Wilson", lunchCount: 1, dinnerCount: 0, hasUpdated: true },
-    { id: 5, name: "Michael Brown", lunchCount: 0, dinnerCount: 0, hasUpdated: false }
-  ]);
-  
-  // Mock extra expenses data
-  const [extras, setExtras] = useState<UserExtra[]>([
-    { id: 1, userId: 1, description: "Extra Rice", amount: 5, date: "2025-05-01" },
-    { id: 2, userId: 2, description: "Special Diet", amount: 15, date: "2025-05-02" },
-    { id: 3, userId: 3, description: "Additional Protein", amount: 10, date: "2025-05-01" }
-  ]);
-  
-  // Mock inventory data
-  const inventory: InventoryItem[] = [
-    { id: 1, item: "Rice", quantity: "15 kg", status: "Sufficient", price: "$25" },
-    { id: 2, item: "Oil", quantity: "5 L", status: "Sufficient", price: "$18" },
-    { id: 3, item: "Chicken", quantity: "8 kg", status: "Low", price: "$45" },
-    { id: 4, item: "Eggs", quantity: "24", status: "Low", price: "$8" },
-    { id: 5, item: "Onions", quantity: "4 kg", status: "Sufficient", price: "$7" }
-  ];
+  // State for database data
+  const [users, setUsers] = useState<UserType[]>([]);
+  const [extras, setExtras] = useState<UserExtra[]>([]);
+  const [inventory, setInventory] = useState<InventoryItem[]>([]);
+
+  // Fetch data from Supabase
+  useEffect(() => {
+    fetchUsers();
+    fetchExtras();
+    fetchInventory();
+  }, []);
+
+  // Fetch users from Supabase
+  const fetchUsers = async () => {
+    const { data, error } = await supabase
+      .from('users')
+      .select('*');
+    
+    if (error) {
+      console.error('Error fetching users:', error);
+      toast.error('Failed to load users');
+    } else {
+      setUsers(data.map(user => ({
+        id: user.id,
+        name: user.name,
+        lunchCount: user.lunchcount || 0,
+        dinnerCount: user.dinnercount || 0,
+        hasUpdated: user.hasupdated || false
+      })) || []);
+    }
+  };
+
+  // Fetch extras from Supabase
+  const fetchExtras = async () => {
+    const { data, error } = await supabase
+      .from('extras')
+      .select('*');
+    
+    if (error) {
+      console.error('Error fetching extras:', error);
+      toast.error('Failed to load extra items');
+    } else {
+      setExtras(data.map(extra => ({
+        id: extra.id,
+        userId: extra.userid,
+        description: extra.description,
+        amount: extra.amount,
+        date: extra.date
+      })) || []);
+    }
+  };
+
+  // Fetch inventory from Supabase
+  const fetchInventory = async () => {
+    const { data, error } = await supabase
+      .from('inventory')
+      .select('*');
+    
+    if (error) {
+      console.error('Error fetching inventory:', error);
+      toast.error('Failed to load inventory');
+    } else {
+      setInventory(data);
+    }
+  };
 
   const notifyUser = (userId: number) => {
     toast.success(`Notification sent to user ${userId}`);
   };
   
-  const updateMealCount = (userId: number, type: 'lunch' | 'dinner', count: number) => {
-    toast.success(`Updated ${type} count for user ${userId} to ${count}`);
+  const updateMealCount = async (userId: number, type: 'lunch' | 'dinner', count: number) => {
+    const field = type === 'lunch' ? 'lunchcount' : 'dinnercount';
+    
+    const { error } = await supabase
+      .from('users')
+      .update({ [field]: count })
+      .eq('id', userId);
+      
+    if (error) {
+      console.error(`Error updating ${type} count:`, error);
+      toast.error(`Failed to update ${type} count`);
+    } else {
+      toast.success(`Updated ${type} count for user ${userId} to ${count}`);
+      fetchUsers(); // Refresh users data
+    }
   };
 
   // Handle adding extra rice or egg items
@@ -94,7 +150,7 @@ const Admin = () => {
   };
 
   // Submit extra rice or egg items
-  const submitExtraItems = (userId: number) => {
+  const submitExtraItems = async (userId: number) => {
     const riceCount = extraRiceCounts[userId] || 0;
     const eggCount = extraEggCounts[userId] || 0;
     
@@ -107,26 +163,40 @@ const Admin = () => {
     
     if (riceCount > 0) {
       // Add extra rice to the extras array
-      setExtras([...extras, {
-        id: extras.length + 1,
-        userId,
-        description: `${riceCount} Extra Rice`,
-        amount: riceCount * 5, // Assuming $5 per rice
-        date: new Date().toISOString().split('T')[0]
-      }]);
+      const { error } = await supabase
+        .from('extras')
+        .insert({
+          userid: userId,
+          description: `${riceCount} Extra Rice`,
+          amount: riceCount * 5, // Assuming $5 per rice
+          date: new Date().toISOString().split('T')[0]
+        });
+        
+      if (error) {
+        console.error('Error adding rice extras:', error);
+        toast.error('Failed to add rice extras');
+        return;
+      }
       
       message += `${riceCount} rice portion${riceCount !== 1 ? 's' : ''} `;
     }
     
     if (eggCount > 0) {
       // Add extra eggs to the extras array
-      setExtras([...extras, {
-        id: extras.length + 1,
-        userId,
-        description: `${eggCount} Extra Egg`,
-        amount: eggCount * 2, // Assuming $2 per egg
-        date: new Date().toISOString().split('T')[0]
-      }]);
+      const { error } = await supabase
+        .from('extras')
+        .insert({
+          userid: userId,
+          description: `${eggCount} Extra Egg`,
+          amount: eggCount * 2, // Assuming $2 per egg
+          date: new Date().toISOString().split('T')[0]
+        });
+        
+      if (error) {
+        console.error('Error adding egg extras:', error);
+        toast.error('Failed to add egg extras');
+        return;
+      }
       
       if (riceCount > 0) message += 'and ';
       message += `${eggCount} egg${eggCount !== 1 ? 's' : ''} `;
@@ -137,6 +207,9 @@ const Admin = () => {
     // Reset counts for this user
     setExtraRiceCounts(prev => ({...prev, [userId]: 0}));
     setExtraEggCounts(prev => ({...prev, [userId]: 0}));
+    
+    // Refresh extras data
+    fetchExtras();
   };
 
   const handleTransferAdmin = () => {
@@ -155,16 +228,26 @@ const Admin = () => {
     }, 2000);
   };
 
-  const toggleUserUpdateStatus = (userId: number, status: boolean) => {
-    setUsers(users.map(user => {
-      if (user.id === userId) {
-        return { ...user, hasUpdated: status };
-      }
-      return user;
-    }));
-    
-    const statusMessage = status ? 'updated' : 'not updated';
-    toast.success(`User ${userId} status set to ${statusMessage}`);
+  const toggleUserUpdateStatus = async (userId: number, status: boolean) => {
+    const { error } = await supabase
+      .from('users')
+      .update({ hasupdated: status })
+      .eq('id', userId);
+      
+    if (error) {
+      console.error('Error updating user status:', error);
+      toast.error('Failed to update user status');
+    } else {
+      setUsers(users.map(user => {
+        if (user.id === userId) {
+          return { ...user, hasUpdated: status };
+        }
+        return user;
+      }));
+      
+      const statusMessage = status ? 'updated' : 'not updated';
+      toast.success(`User ${userId} status set to ${statusMessage}`);
+    }
   };
 
   const handleUpdateAll = () => {
@@ -177,7 +260,7 @@ const Admin = () => {
     setIsExtraDialogOpen(true);
   };
 
-  const handleExtraSubmit = () => {
+  const handleExtraSubmit = async () => {
     if (currentUser === null || !extraAmount || !extraDescription) return;
     
     const amount = parseFloat(extraAmount);
@@ -187,23 +270,31 @@ const Admin = () => {
       return;
     }
     
-    // Add new extra expense
-    const newExtra: UserExtra = {
-      id: extras.length + 1,
-      userId: currentUser,
-      description: extraDescription,
-      amount,
-      date: new Date().toISOString().split('T')[0]
-    };
+    // Add new extra expense to Supabase
+    const { error } = await supabase
+      .from('extras')
+      .insert({
+        userid: currentUser,
+        description: extraDescription,
+        amount,
+        date: new Date().toISOString().split('T')[0]
+      });
     
-    setExtras([...extras, newExtra]);
-    toast.success(`Extra expense of $${amount} added to user ${currentUser}`);
-    
-    // Reset form
-    setExtraAmount('');
-    setExtraDescription('');
-    setIsExtraDialogOpen(false);
-    setCurrentUser(null);
+    if (error) {
+      console.error('Error adding expense:', error);
+      toast.error('Failed to add expense');
+    } else {
+      toast.success(`Extra expense of $${amount} added to user ${currentUser}`);
+      
+      // Reset form
+      setExtraAmount('');
+      setExtraDescription('');
+      setIsExtraDialogOpen(false);
+      setCurrentUser(null);
+      
+      // Refresh extras
+      fetchExtras();
+    }
   };
 
   const handleUpdateSubmit = () => {
@@ -229,7 +320,7 @@ const Admin = () => {
           onValueChange={setSelectedTab}
           className="space-y-6"
         >
-          <TabsList className="grid grid-cols-4 max-w-md">
+          <TabsList className="grid grid-cols-5 max-w-3xl">
             <TabsTrigger value="users" className="flex items-center gap-2">
               <User size={16} />
               <span>Users</span>
@@ -241,6 +332,10 @@ const Admin = () => {
             <TabsTrigger value="inventory" className="flex items-center gap-2">
               <Package size={16} />
               <span>Inventory</span>
+            </TabsTrigger>
+            <TabsTrigger value="budgeting" className="flex items-center gap-2">
+              <BadgeDollarSign size={16} />
+              <span>Budgeting</span>
             </TabsTrigger>
             <TabsTrigger value="transfer" className="flex items-center gap-2">
               <ShieldCheck size={16} />
@@ -300,6 +395,20 @@ const Admin = () => {
               </CardHeader>
               <CardContent>
                 <InventoryManagement inventory={inventory} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="budgeting">
+            <Card>
+              <CardHeader>
+                <CardTitle>Budget Management</CardTitle>
+                <CardDescription>
+                  Track contributions, expenses, and manage your budget
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <BudgetingManagement />
               </CardContent>
             </Card>
           </TabsContent>
