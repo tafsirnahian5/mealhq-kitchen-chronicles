@@ -100,24 +100,30 @@ export type Database = {
       users: {
         Row: {
           dinnercount: number | null
+          email: string | null
           hasupdated: boolean | null
           id: number
           lunchcount: number | null
           name: string
+          phone: string | null
         }
         Insert: {
           dinnercount?: number | null
+          email?: string | null
           hasupdated?: boolean | null
           id?: number
           lunchcount?: number | null
           name: string
+          phone?: string | null
         }
         Update: {
           dinnercount?: number | null
+          email?: string | null
           hasupdated?: boolean | null
           id?: number
           lunchcount?: number | null
           name?: string
+          phone?: string | null
         }
         Relationships: []
       }

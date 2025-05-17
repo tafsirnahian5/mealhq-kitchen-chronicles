@@ -87,7 +87,7 @@ const Signup = () => {
     setIsSubmitting(true);
     
     try {
-      await signUp(formData.email, formData.password, formData.name);
+      await signUp(formData.email, formData.password, formData.name, formData.phone);
       // Navigate to login page
       navigate('/login');
     } catch (error) {

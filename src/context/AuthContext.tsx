@@ -8,7 +8,7 @@ interface AuthContextType {
   session: Session | null;
   user: User | null;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, name: string) => Promise<void>;
+  signUp: (email: string, password: string, name: string, phone?: string) => Promise<void>;
   signOut: () => Promise<void>;
   loading: boolean;
 }
@@ -83,7 +83,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signUp = async (email: string, password: string, name: string) => {
+  const signUp = async (email: string, password: string, name: string, phone?: string) => {
     try {
       setLoading(true);
       const { data, error } = await supabase.auth.signUp({
@@ -101,12 +101,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (data.user) {
-        // Create a record in the users table
+        // Create a record in the users table with email and phone
         const { error: userError } = await supabase
           .from('users')
           .insert({
-            // Convert the UUID string to an integer or remove id field to let it auto-generate
             name: name,
+            email: email,
+            phone: phone || null,
             // Default values for other fields will be applied by the database
           });
 
