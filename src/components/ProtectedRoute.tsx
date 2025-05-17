@@ -20,11 +20,10 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, adminOnly = f
       if (user) {
         try {
           // Query the users table to check if this user is an admin
-          // For simplicity, we're checking if the user ID is 1, which we'll consider as admin
           const { data } = await supabase
             .from('users')
             .select('id')
-            .eq('id', user.id)
+            .eq('id', parseInt(user.id))
             .single();
           
           // For this example, let's consider the first user (ID = 1) as admin

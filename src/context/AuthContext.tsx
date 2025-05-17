@@ -105,8 +105,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const { error: userError } = await supabase
           .from('users')
           .insert({
-            id: data.user.id,
-            name: name
+            // Convert the UUID string to an integer or remove id field to let it auto-generate
+            name: name,
+            // Default values for other fields will be applied by the database
           });
 
         if (userError) {
