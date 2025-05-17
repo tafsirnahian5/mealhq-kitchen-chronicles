@@ -20,17 +20,25 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, adminOnly = f
       if (user) {
         try {
           // Query the users table to check if this user is an admin
-          const { data } = await supabase
-            .from('users')
-            .select('id')
-            .eq('id', parseInt(user.id))
-            .single();
+          // Convert user.id to a number since our database expects it
+          const userId = user.id ? parseInt(user.id) : null;
           
-          // For this example, let's consider the first user (ID = 1) as admin
-          // In a real app, you would have a proper admin flag or role column
-          setIsAdmin(data?.id === 1);
+          if (userId) {
+            const { data } = await supabase
+              .from('users')
+              .select('id')
+              .eq('id', userId)
+              .single();
+            
+            // For this example, let's consider the first user (ID = 1) as admin
+            // In a real app, you would have a proper admin flag or role column
+            setIsAdmin(data?.id === 1);
+          } else {
+            setIsAdmin(false);
+          }
         } catch (error) {
           console.error('Error checking admin status:', error);
+          setIsAdmin(false);
         }
       }
       setCheckingAdmin(false);

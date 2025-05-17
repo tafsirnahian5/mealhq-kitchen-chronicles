@@ -63,17 +63,50 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signIn = async (email: string, password: string) => {
     try {
       setLoading(true);
+      
+      // Clean up any existing auth state to prevent conflicts
+      Object.keys(localStorage).forEach((key) => {
+        if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+          localStorage.removeItem(key);
+        }
+      });
+      
+      // Attempt to sign out first to clear any existing sessions
+      try {
+        await supabase.auth.signOut({ scope: 'global' });
+      } catch (err) {
+        // Continue even if this fails
+      }
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
 
       if (error) {
+        // Check if it's the email not confirmed error and handle it
+        if (error.message.includes('Email not confirmed')) {
+          const { error: resendError } = await supabase.auth.resend({
+            type: 'signup',
+            email
+          });
+          
+          if (!resendError) {
+            toast.info("Your email wasn't verified. We've sent a new verification email.", {
+              duration: 6000,
+            });
+          } else {
+            throw new Error("Could not resend verification email: " + resendError.message);
+          }
+        }
         throw error;
       }
 
       if (data.user) {
         toast.success("Signed in successfully!");
+        
+        // Force page reload for a clean state after successful login
+        window.location.href = '/home';
       }
     } catch (error: any) {
       toast.error(error.message || "Error signing in");
@@ -86,13 +119,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signUp = async (email: string, password: string, name: string, phone?: string) => {
     try {
       setLoading(true);
+      
+      // Clean up any existing auth state
+      Object.keys(localStorage).forEach((key) => {
+        if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+          localStorage.removeItem(key);
+        }
+      });
+      
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
             name
-          }
+          },
+          emailRedirectTo: window.location.origin + '/login'
         }
       });
 
@@ -115,7 +157,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.error("Error creating user record:", userError);
         }
 
-        toast.success("Account created successfully! Please verify your email.");
+        toast.success("Account created successfully! Please verify your email.", {
+          duration: 6000,
+        });
+        
+        // Alert user about next steps
+        toast.info("Check your email and click the verification link to complete signup.", {
+          duration: 8000,
+        });
       }
     } catch (error: any) {
       toast.error(error.message || "Error signing up");
@@ -128,7 +177,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signOut = async () => {
     try {
       setLoading(true);
-      const { error } = await supabase.auth.signOut();
+      
+      // Clean up auth state first
+      Object.keys(localStorage).forEach((key) => {
+        if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+          localStorage.removeItem(key);
+        }
+      });
+      
+      const { error } = await supabase.auth.signOut({ scope: 'global' });
       if (error) {
         throw error;
       }
