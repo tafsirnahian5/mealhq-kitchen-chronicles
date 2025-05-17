@@ -57,7 +57,7 @@ const BudgetingManagement = () => {
   const fetchContributions = async () => {
     const { data, error } = await supabase
       .from('contributions')
-      .select('id, userId, amount, date, description');
+      .select('id, userid, amount, date, description');
     
     if (error) {
       console.error('Error fetching contributions:', error);
@@ -114,7 +114,7 @@ const BudgetingManagement = () => {
     const { error } = await supabase
       .from('contributions')
       .insert({
-        userId: newContribution.userId,
+        userid: newContribution.userId,
         amount,
         description: newContribution.description || null
       });
