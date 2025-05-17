@@ -7,6 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { jsPDF } from 'jspdf';
+import { BarChart, FileText } from 'lucide-react';
 
 interface InventoryItem {
   id: number;
@@ -91,6 +93,84 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({ inventory }) 
     }
   };
 
+  // Categorize food items by their dietary groups
+  const categorizeFoodItems = () => {
+    const categories = {
+      proteins: ['chicken', 'beef', 'fish', 'eggs', 'tofu', 'beans', 'lentils', 'pork', 'turkey', 'lamb'],
+      carbohydrates: ['rice', 'pasta', 'bread', 'potatoes', 'oats', 'quinoa', 'cereal', 'noodles'],
+      vegetables: ['carrots', 'broccoli', 'spinach', 'lettuce', 'tomatoes', 'peppers', 'onions', 'garlic', 'cucumber'],
+      fruits: ['apples', 'bananas', 'oranges', 'berries', 'grapes', 'melon', 'mango', 'pineapple'],
+      dairy: ['milk', 'cheese', 'yogurt', 'butter', 'cream'],
+      condiments: ['salt', 'pepper', 'oil', 'vinegar', 'sauce', 'spice', 'herb'],
+      other: []
+    };
+
+    const categorizedItems = {
+      proteins: [] as InventoryItem[],
+      carbohydrates: [] as InventoryItem[],
+      vegetables: [] as InventoryItem[],
+      fruits: [] as InventoryItem[],
+      dairy: [] as InventoryItem[],
+      condiments: [] as InventoryItem[],
+      other: [] as InventoryItem[]
+    };
+    
+    inventory.forEach(item => {
+      const itemNameLower = item.item.toLowerCase();
+      let categorized = false;
+      
+      // Check which category this item belongs to
+      Object.entries(categories).forEach(([category, keywords]) => {
+        if (!categorized && keywords.some(keyword => itemNameLower.includes(keyword))) {
+          categorizedItems[category as keyof typeof categorizedItems].push(item);
+          categorized = true;
+        }
+      });
+      
+      // If item couldn't be categorized, put it in "other"
+      if (!categorized) {
+        categorizedItems.other.push(item);
+      }
+    });
+    
+    return categorizedItems;
+  };
+
+  const generateNutritionalAnalysis = () => {
+    const categorized = categorizeFoodItems();
+    
+    // Count items in each category
+    const counts = {
+      proteins: categorized.proteins.length,
+      carbohydrates: categorized.carbohydrates.length,
+      vegetables: categorized.vegetables.length,
+      fruits: categorized.fruits.length,
+      dairy: categorized.dairy.length,
+      condiments: categorized.condiments.length,
+      other: categorized.other.length
+    };
+    
+    // Check if there's a balanced distribution across food groups
+    const totalItems = Object.values(counts).reduce((sum, count) => sum + count, 0);
+    const isBalanced = counts.proteins > 0 && counts.carbohydrates > 0 && 
+                     (counts.vegetables > 0 || counts.fruits > 0);
+    
+    // Check if there's sufficient variety
+    const hasVariety = totalItems >= 10 && Object.values(counts).filter(count => count > 0).length >= 4;
+    
+    // Check for low items to restock
+    const lowItems = inventory.filter(item => item.status === 'Low');
+    
+    return {
+      categoryCounts: counts,
+      totalItems,
+      isBalanced,
+      hasVariety,
+      lowItems,
+      recommendations: []
+    };
+  };
+
   const generateShoppingList = () => {
     const lowItems = inventory.filter(item => item.status === 'Low');
     if (lowItems.length === 0) {
@@ -98,15 +178,104 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({ inventory }) 
       return;
     }
     
-    const shoppingList = lowItems.map(item => `${item.item}: ${item.quantity} (${item.price})`).join('\n');
+    const analysis = generateNutritionalAnalysis();
+    const categorized = categorizeFoodItems();
     
-    // In a real app, you might want to generate a PDF or send this as an email
-    toast.success('Shopping list generated');
-    console.log('Shopping List:');
-    console.log(shoppingList);
+    // Generate dietary recommendations based on analysis
+    const recommendations: string[] = [];
     
-    // Show a simple alert with the list
-    alert('Shopping List:\n\n' + shoppingList);
+    if (!analysis.isBalanced) {
+      if (analysis.categoryCounts.proteins === 0) {
+        recommendations.push('Add protein sources to your diet (meat, fish, eggs, or plant-based alternatives)');
+      }
+      if (analysis.categoryCounts.carbohydrates === 0) {
+        recommendations.push('Add carbohydrate sources (rice, pasta, bread, etc.)');
+      }
+      if (analysis.categoryCounts.vegetables === 0 && analysis.categoryCounts.fruits === 0) {
+        recommendations.push('Add fruits and vegetables for essential vitamins and minerals');
+      }
+    }
+    
+    if (!analysis.hasVariety) {
+      recommendations.push('Increase the variety of foods in your inventory for a more balanced diet');
+    }
+    
+    // Create a PDF document
+    const doc = new jsPDF();
+    
+    // Set up document
+    doc.setFontSize(20);
+    doc.text('MealHQ Inventory Analysis', 20, 20);
+    doc.setFontSize(12);
+    doc.text(`Generated on ${new Date().toLocaleDateString()}`, 20, 30);
+    
+    // Shopping List Section
+    doc.setFontSize(16);
+    doc.text('Shopping List (Low Stock Items)', 20, 45);
+    
+    let yPos = 55;
+    if (lowItems.length > 0) {
+      lowItems.forEach((item, index) => {
+        doc.setFontSize(12);
+        doc.text(`${index + 1}. ${item.item}: ${item.quantity} (${item.price})`, 25, yPos);
+        yPos += 7;
+      });
+    } else {
+      doc.setFontSize(12);
+      doc.text('No items are currently low in stock', 25, yPos);
+      yPos += 10;
+    }
+    
+    // Dietary Analysis Section
+    yPos += 10;
+    doc.setFontSize(16);
+    doc.text('Dietary Analysis', 20, yPos);
+    yPos += 10;
+    
+    const {categoryCounts} = analysis;
+    
+    doc.setFontSize(12);
+    doc.text('Current Inventory by Food Group:', 25, yPos);
+    yPos += 7;
+    doc.text(`• Proteins: ${categoryCounts.proteins} items`, 30, yPos); yPos += 7;
+    doc.text(`• Carbohydrates: ${categoryCounts.carbohydrates} items`, 30, yPos); yPos += 7;
+    doc.text(`• Vegetables: ${categoryCounts.vegetables} items`, 30, yPos); yPos += 7;
+    doc.text(`• Fruits: ${categoryCounts.fruits} items`, 30, yPos); yPos += 7;
+    doc.text(`• Dairy: ${categoryCounts.dairy} items`, 30, yPos); yPos += 7;
+    doc.text(`• Condiments: ${categoryCounts.condiments} items`, 30, yPos); yPos += 7;
+    doc.text(`• Other: ${categoryCounts.other} items`, 30, yPos); yPos += 7;
+    
+    // Diet Balance Assessment
+    yPos += 10;
+    doc.setFontSize(14);
+    doc.text('Diet Balance Assessment', 25, yPos);
+    yPos += 10;
+    
+    doc.setFontSize(12);
+    doc.text(`Diet Balance: ${analysis.isBalanced ? 'Good' : 'Needs improvement'}`, 30, yPos);
+    yPos += 7;
+    doc.text(`Food Variety: ${analysis.hasVariety ? 'Good' : 'Could be improved'}`, 30, yPos);
+    yPos += 10;
+    
+    // Recommendations Section
+    if (recommendations.length > 0) {
+      doc.setFontSize(14);
+      doc.text('Recommendations:', 25, yPos);
+      yPos += 10;
+      
+      recommendations.forEach((rec, index) => {
+        doc.setFontSize(12);
+        // Handle long text with wrapping
+        const splitText = doc.splitTextToSize(rec, 150);
+        doc.text(splitText, 30, yPos);
+        yPos += splitText.length * 7 + 3;
+      });
+    }
+    
+    // Save the PDF with a name
+    doc.save('MealHQ_Inventory_Analysis.pdf');
+    
+    toast.success('Inventory analysis PDF generated');
   };
   
   return (
@@ -155,7 +324,13 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({ inventory }) 
         }}>
           Add New Item
         </Button>
-        <Button onClick={generateShoppingList}>Generate Shopping List</Button>
+        <Button 
+          onClick={generateShoppingList}
+          className="flex items-center gap-2"
+        >
+          <FileText size={16} />
+          <span>Generate Analysis PDF</span>
+        </Button>
       </div>
 
       {/* Update/Add Item Dialog */}

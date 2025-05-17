@@ -8,15 +8,26 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
+import { useAuth } from '@/context/AuthContext';
 
 const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { signIn, user } = useAuth();
   const [loginMode, setLoginMode] = useState<'admin' | 'user'>('user');
   const [formData, setFormData] = useState({
     name: '',
+    email: '',
     password: ''
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Redirect if user is already logged in
+  useEffect(() => {
+    if (user) {
+      navigate('/home');
+    }
+  }, [user, navigate]);
 
   // Check if we have a new admin coming from a transfer
   useEffect(() => {
@@ -35,20 +46,23 @@ const Login = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // For demo purposes, we'll just show a success message and redirect
-    toast.success(`Successfully logged in as ${loginMode}!`);
+    if (!formData.email || !formData.password) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    setIsSubmitting(true);
     
-    // Simulate login and redirect to appropriate page
-    setTimeout(() => {
-      if (loginMode === 'admin') {
-        navigate('/home', { state: { isAdmin: true, isLoggedIn: true } });
-      } else {
-        navigate('/home', { state: { isAdmin: false, isLoggedIn: true } });
-      }
-    }, 1000);
+    try {
+      await signIn(formData.email, formData.password);
+    } catch (error) {
+      console.error('Login error:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -74,13 +88,14 @@ const Login = () => {
               <form onSubmit={handleSubmit}>
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="name">Name</Label>
+                    <Label htmlFor="email">Email</Label>
                     <Input 
-                      id="name" 
-                      name="name" 
-                      placeholder="Enter your name" 
+                      id="email" 
+                      name="email" 
+                      type="email"
+                      placeholder="Enter your email" 
                       required 
-                      value={formData.name}
+                      value={formData.email}
                       onChange={handleChange}
                     />
                   </div>
@@ -98,8 +113,12 @@ const Login = () => {
                     />
                   </div>
                   
-                  <Button type="submit" className="w-full bg-mealhq-red hover:bg-mealhq-red-light">
-                    Login
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-mealhq-red hover:bg-mealhq-red-light"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? 'Logging in...' : 'Login'}
                   </Button>
                 </div>
               </form>

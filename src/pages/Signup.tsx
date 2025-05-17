@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,34 +7,61 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
+import { useAuth } from '@/context/AuthContext';
 
 const Signup = () => {
   const navigate = useNavigate();
+  const { signUp, user } = useAuth();
   const [formData, setFormData] = useState({
     name: '',
+    email: '',
     phone: '',
     password: '',
     confirmPassword: ''
   });
   
   const [errors, setErrors] = useState({
+    name: '',
+    email: '',
     password: '',
     confirmPassword: ''
   });
+  
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Redirect if user is already logged in
+  useEffect(() => {
+    if (user) {
+      navigate('/home');
+    }
+  }, [user, navigate]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     
     // Clear errors when typing
-    if (name === 'password' || name === 'confirmPassword') {
+    if (name in errors) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
   };
 
   const validateForm = () => {
     let isValid = true;
-    const newErrors = { password: '', confirmPassword: '' };
+    const newErrors = { name: '', email: '', password: '', confirmPassword: '' };
+    
+    if (!formData.name.trim()) {
+      newErrors.name = 'Name is required';
+      isValid = false;
+    }
+    
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email is required';
+      isValid = false;
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = 'Email is invalid';
+      isValid = false;
+    }
     
     if (formData.password.length < 6) {
       newErrors.password = 'Password must be at least 6 characters long';
@@ -50,17 +77,23 @@ const Signup = () => {
     return isValid;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (validateForm()) {
-      // For demo purposes, we'll just show a success message and redirect
-      toast.success('Account created successfully!');
-      
-      // Simulate account creation
-      setTimeout(() => {
-        navigate('/login');
-      }, 1500);
+    if (!validateForm()) {
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
+    try {
+      await signUp(formData.email, formData.password, formData.name);
+      // Navigate to login page
+      navigate('/login');
+    } catch (error) {
+      console.error('Signup error:', error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -90,16 +123,34 @@ const Signup = () => {
                     value={formData.name}
                     onChange={handleChange}
                   />
+                  {errors.name && (
+                    <p className="text-destructive text-xs">{errors.name}</p>
+                  )}
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number</Label>
+                  <Label htmlFor="email">Email</Label>
+                  <Input 
+                    id="email" 
+                    name="email" 
+                    type="email" 
+                    placeholder="Enter your email" 
+                    required
+                    value={formData.email}
+                    onChange={handleChange}
+                  />
+                  {errors.email && (
+                    <p className="text-destructive text-xs">{errors.email}</p>
+                  )}
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone Number (Optional)</Label>
                   <Input 
                     id="phone" 
                     name="phone" 
                     type="tel" 
                     placeholder="Enter your phone number" 
-                    required
                     value={formData.phone}
                     onChange={handleChange}
                   />
@@ -137,8 +188,12 @@ const Signup = () => {
                   )}
                 </div>
                 
-                <Button type="submit" className="w-full bg-mealhq-red hover:bg-mealhq-red-light">
-                  Sign Up
+                <Button 
+                  type="submit" 
+                  className="w-full bg-mealhq-red hover:bg-mealhq-red-light"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Signing Up...' : 'Sign Up'}
                 </Button>
               </div>
             </form>

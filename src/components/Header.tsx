@@ -1,170 +1,195 @@
 
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Button } from "@/components/ui/button";
-import { Moon, Sun, Grid2X2, User, Menu, LogOut } from "lucide-react";
-import { useIsMobile } from '@/hooks/use-mobile';
+import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu';
-import { toast } from 'sonner';
+import { Menu, User, LogOut, Settings, Home, ClipboardList, ShieldCheck } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 
 interface HeaderProps {
   isLoggedIn?: boolean;
   isAdmin?: boolean;
 }
 
-const Header: React.FC<HeaderProps> = ({ isLoggedIn = false, isAdmin = false }) => {
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const [showMobileMenu, setShowMobileMenu] = useState(false);
-  const navigate = useNavigate();
-  const isMobile = useIsMobile();
+const Header: React.FC<HeaderProps> = ({ isAdmin = false }) => {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { user, signOut } = useAuth();
+  const isLoggedIn = !!user;
 
-  const toggleDarkMode = () => {
-    setIsDarkMode(!isDarkMode);
-    document.documentElement.classList.toggle('dark');
+  const getInitials = () => {
+    if (!user) return 'G';
+    
+    const name = user.user_metadata?.name || user.email || '';
+    return name
+      .split(' ')
+      .map(part => part[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
   };
 
-  const toggleMobileMenu = () => {
-    setShowMobileMenu(!showMobileMenu);
-  };
-
-  const handleLogout = () => {
-    toast.success("Successfully logged out");
-    navigate('/', { replace: true });
+  const handleSignOut = async () => {
+    await signOut();
   };
 
   return (
-    <header className="w-full py-4 px-4 md:px-6 bg-background border-b border-border sticky top-0 z-10">
-      <div className="max-w-7xl mx-auto flex justify-between items-center">
-        <Link to={isLoggedIn ? "/home" : "/"} className="flex items-center space-x-2">
-          <div className="w-8 h-8 md:w-10 md:h-10 bg-mealhq-red rounded-full flex items-center justify-center text-white font-bold">
-            M
-          </div>
-          <span className="logo-text text-xl md:text-2xl">MealHQ</span>
-        </Link>
-
-        {isMobile ? (
+    <header className="bg-white border-b border-gray-200 py-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between">
           <div className="flex items-center">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={toggleDarkMode}
-              className="rounded-full mr-2"
-            >
-              {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
-            </Button>
-            
-            {isLoggedIn && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={toggleMobileMenu}
-              >
-                <Menu size={20} />
-              </Button>
-            )}
+            <Link to="/" className="flex items-center gap-2">
+              <div className="w-10 h-10 bg-mealhq-red rounded-lg flex items-center justify-center text-white font-bold">
+                M
+              </div>
+              <span className="text-xl font-semibold text-mealhq-dark">MealHQ</span>
+            </Link>
           </div>
-        ) : (
-          <div className="flex items-center space-x-4">
-            {isLoggedIn && (
+
+          {/* Mobile menu */}
+          <div className="md:hidden">
+            <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <Menu size={20} />
+                </Button>
+              </SheetTrigger>
+              <SheetContent>
+                <div className="flex flex-col gap-4 py-4">
+                  {isLoggedIn ? (
+                    <>
+                      <Link 
+                        to="/home" 
+                        className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded-md"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        <Home size={18} />
+                        <span>Home</span>
+                      </Link>
+                      <Link 
+                        to="/profile" 
+                        className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded-md"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        <User size={18} />
+                        <span>Profile</span>
+                      </Link>
+                      <Link 
+                        to="/meal-table" 
+                        className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded-md"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        <ClipboardList size={18} />
+                        <span>Meal Table</span>
+                      </Link>
+                      {isAdmin && (
+                        <Link 
+                          to="/admin" 
+                          className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded-md"
+                          onClick={() => setIsMenuOpen(false)}
+                        >
+                          <ShieldCheck size={18} />
+                          <span>Admin</span>
+                        </Link>
+                      )}
+                      <button 
+                        onClick={() => {
+                          setIsMenuOpen(false);
+                          handleSignOut();
+                        }}
+                        className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded-md text-left w-full"
+                      >
+                        <LogOut size={18} />
+                        <span>Sign Out</span>
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <Link 
+                        to="/login" 
+                        className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded-md"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        <User size={18} />
+                        <span>Log In</span>
+                      </Link>
+                      <Link 
+                        to="/signup" 
+                        className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded-md"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        <User size={18} />
+                        <span>Sign Up</span>
+                      </Link>
+                    </>
+                  )}
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
+
+          {/* Desktop menu */}
+          <nav className="hidden md:flex items-center space-x-6">
+            {isLoggedIn ? (
               <>
+                <Link to="/home" className="text-gray-700 hover:text-mealhq-red transition-colors">
+                  Home
+                </Link>
+                <Link to="/meal-table" className="text-gray-700 hover:text-mealhq-red transition-colors">
+                  Meal Table
+                </Link>
                 {isAdmin && (
-                  <Button 
-                    variant="outline" 
-                    className="flex items-center gap-2"
-                    onClick={() => navigate('/meal-table')}
-                  >
-                    <Grid2X2 size={18} />
-                    <span>Meal Table</span>
-                  </Button>
+                  <Link to="/admin" className="text-gray-700 hover:text-mealhq-red transition-colors">
+                    Admin
+                  </Link>
                 )}
-                
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="flex items-center gap-2 px-2">
-                      <Avatar className="h-8 w-8">
+                    <Button variant="ghost" className="p-0" size="sm">
+                      <Avatar className="h-9 w-9">
                         <AvatarFallback className="bg-mealhq-red text-white">
-                          {isAdmin ? "A" : "U"}
+                          {getInitials()}
                         </AvatarFallback>
                       </Avatar>
-                      <span>{isAdmin ? 'Admin' : 'User'}</span>
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48">
-                    <DropdownMenuItem onClick={() => navigate(isAdmin ? '/admin' : '/profile')}>
-                      <User className="mr-2" size={16} />
-                      <span>{isAdmin ? 'Admin Dashboard' : 'Profile'}</span>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem asChild>
+                      <Link to="/profile" className="cursor-pointer flex items-center gap-2">
+                        <User size={16} />
+                        <span>Profile</span>
+                      </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleLogout}>
-                      <LogOut className="mr-2" size={16} />
-                      <span>Logout</span>
+                    <DropdownMenuItem asChild>
+                      <Link to="/settings" className="cursor-pointer flex items-center gap-2">
+                        <Settings size={16} />
+                        <span>Settings</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      className="cursor-pointer text-red-500 focus:text-red-500 flex items-center gap-2"
+                      onClick={handleSignOut}
+                    >
+                      <LogOut size={16} />
+                      <span>Sign Out</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </>
+            ) : (
+              <>
+                <Link to="/login">
+                  <Button variant="ghost">Log In</Button>
+                </Link>
+                <Link to="/signup">
+                  <Button className="bg-mealhq-red hover:bg-mealhq-red-light">Sign Up</Button>
+                </Link>
+              </>
             )}
-
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={toggleDarkMode}
-              className="rounded-full"
-            >
-              {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
-            </Button>
-          </div>
-        )}
-      </div>
-      
-      {/* Mobile menu dropdown */}
-      {isMobile && showMobileMenu && isLoggedIn && (
-        <div className="absolute top-full left-0 right-0 bg-background border-b border-border shadow-md animate-in slide-in-from-top-5 duration-200">
-          <div className="p-4 flex flex-col space-y-2">
-            {isAdmin && (
-              <Button 
-                variant="outline" 
-                className="flex items-center justify-start gap-2 w-full"
-                onClick={() => {
-                  navigate('/meal-table');
-                  setShowMobileMenu(false);
-                }}
-              >
-                <Grid2X2 size={18} />
-                <span>Meal Table</span>
-              </Button>
-            )}
-            
-            <Button 
-              variant="ghost" 
-              className="flex items-center justify-start gap-2 w-full"
-              onClick={() => {
-                navigate(isAdmin ? '/admin' : '/profile');
-                setShowMobileMenu(false);
-              }}
-            >
-              <User size={18} />
-              <span>{isAdmin ? 'Admin Dashboard' : 'Profile'}</span>
-            </Button>
-
-            <Button 
-              variant="ghost" 
-              className="flex items-center justify-start gap-2 w-full text-red-500"
-              onClick={() => {
-                handleLogout();
-                setShowMobileMenu(false);
-              }}
-            >
-              <LogOut size={18} />
-              <span>Logout</span>
-            </Button>
-          </div>
+          </nav>
         </div>
-      )}
+      </div>
     </header>
   );
 };
